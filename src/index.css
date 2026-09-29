@@ -1,54 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 216 33% 97%;
-    --foreground: 222 47% 11%;
+    --background: 220 20% 98%;
+    --foreground: 224 32% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 32% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 32% 10%;
 
-    --primary: 221 83% 53%;
+    --primary: 243 75% 59%;
     --primary-foreground: 0 0% 100%;
 
-    --primary-dark: 224 76% 40%;
+    --primary-dark: 244 55% 41%;
 
-    --secondary: 216 33% 94%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 220 16% 94%;
+    --secondary-foreground: 224 32% 10%;
 
-    --muted: 216 33% 94%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 16% 94%;
+    --muted-foreground: 220 10% 40%;
 
-    --accent: 221 83% 95%;
-    --accent-foreground: 221 83% 53%;
+    --accent: 243 100% 97%;
+    --accent-foreground: 243 75% 50%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 28% 89%;
-    --input: 214 28% 89%;
-    --ring: 221 83% 53%;
+    --border: 220 14% 90%;
+    --input: 220 14% 88%;
+    --ring: 243 75% 59%;
 
     --radius: 0.75rem;
 
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
 
-    --sidebar-background: 0 0% 99%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 9% 40%;
+    --sidebar-primary: 243 75% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 221 83% 95%;
-    --sidebar-accent-foreground: 221 83% 53%;
-    --sidebar-border: 214 28% 89%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-accent: 243 100% 97%;
+    --sidebar-accent-foreground: 243 75% 50%;
+    --sidebar-border: 220 14% 92%;
+    --sidebar-ring: 243 75% 59%;
   }
 }
 
@@ -58,7 +56,6 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -81,7 +78,8 @@
      font-size < 16px. Esto fuerza 16px en cualquier input/textarea/select por
      debajo del breakpoint md, incluso si una clase de Tailwind intenta achicarlo. */
   @media (max-width: 767px) {
-    input, textarea, select {
+    /* .keep-font-size: campos que ya usan ≥16px (p. ej. el título de una tarea). */
+    :where(input, textarea, select):not(.keep-font-size) {
       font-size: 16px !important;
     }
   }

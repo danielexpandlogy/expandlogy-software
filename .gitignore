@@ -33,3 +33,10 @@ deno.lock
 *.sln
 *.sw?
 .mcp.json
+
+# Scripts de arranque con credenciales (ver supabase/bootstrap/)
+supabase/bootstrap/*.sql
+
+# Playwright
+/test-results/
+/playwright-report/
