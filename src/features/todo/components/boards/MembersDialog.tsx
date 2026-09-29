@@ -27,12 +27,16 @@ export function MembersDialog({ board, open, onOpenChange }: { board: Board; ope
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        // El buscador aparece al cargar las personas: se enfoca él, no "Cancelar".
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Personas del tablero</DialogTitle>
           <DialogDescription>Quienes estén aquí verán “{board.name}” en su menú y podrán trabajar en él.</DialogDescription>
         </DialogHeader>
-        {current ? <MemberPicker value={value} onChange={setValue} locked={[board.owner_id]} lockedLabel="creador" /> : <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />}
+        {current ? <MemberPicker value={value} onChange={setValue} locked={[board.owner_id]} lockedLabel="creador" autoFocus /> : <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />}
         {setMembers.error && (
           <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {setMembers.error.message}

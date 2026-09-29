@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { webkit, type Page } from "@playwright/test";
 import { expect, test } from "./support/fixtures";
 import { createBoardFor, login, service } from "./support/identities";
 
@@ -158,7 +158,29 @@ test("grabar una nota de voz en el navegador, escucharla y adjuntarla (sin texto
   // Duración real de la grabación (≥2 s; bajo carga puede tardar algo más en detenerse).
   await expect(players.last()).toContainText(/0:0[2-6]/);
   const { data } = await service.from("comment_attachments").select("mime_type,duration_ms").eq("kind", "audio").eq("board_id", boardId);
-  expect(data!.some((a) => a.mime_type.startsWith("audio/webm") && a.duration_ms! >= 2000)).toBe(true);
+  // MP4/AAC: el formato que reproducen todos los navegadores (también Safari).
+  expect(data!.some((a) => a.mime_type.startsWith("audio/mp4") && a.duration_ms! >= 2000)).toBe(true);
+
+  // Y suena de verdad: el tiempo de reproducción avanza.
+  const player = players.last();
+  await player.getByRole("button", { name: "Reproducir audio" }).click();
+  await expect.poll(() => player.locator("audio").evaluate((a: HTMLAudioElement) => a.currentTime), { timeout: 10_000 }).toBeGreaterThan(0.3);
+  await expect(player.getByRole("alert")).toHaveCount(0);
+});
+
+test("las notas de voz también se reproducen en Safari (WebKit)", async ({ team }) => {
+  const browser = await webkit.launch();
+  const page = await (await browser.newContext()).newPage();
+  await login(page, team.member);
+  await page.goto(`/todos/${boardId}/t/${taskId}`);
+  const players = page.getByRole("dialog").first().getByTestId("audio-player");
+  await expect(players).toHaveCount(2);
+  for (const player of await players.all()) {
+    await player.getByRole("button", { name: "Reproducir audio" }).click();
+    await expect.poll(() => player.locator("audio").evaluate((a: HTMLAudioElement) => a.currentTime), { timeout: 10_000 }).toBeGreaterThan(0.3);
+    await player.getByRole("button", { name: "Pausar audio" }).click().catch(() => {});
+  }
+  await browser.close();
 });
 
 test("sin permiso de micrófono se explica y se puede seguir adjuntando archivos", async ({ page }) => {

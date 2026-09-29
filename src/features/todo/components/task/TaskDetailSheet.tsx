@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, CalendarDays, Link2, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +19,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Database, Task, TodoPriority } from "@/lib/database.types";
-import { displayName, PRIORITY_LABEL } from "@/lib/labels";
+import { displayName } from "@/lib/labels";
+import { PrioritySelectItems } from "../shared/PriorityFlag";
 import { useDeleteTask, useUpdateTask } from "../../api/board";
 import { useBoardPeople } from "../../api/people";
 import { uploadsInFlight } from "../../lib/media";
@@ -83,15 +84,6 @@ export function TaskDetailSheet({ data, taskId, onNavigate, onClose, footer }: P
     updateTask.mutate({ id: task.id, section_id: sectionId, position: positionAtEnd(siblings) });
   };
 
-  const copyLink = async () => {
-    const url = `${window.location.origin}/todos/${boardId}/t/${task.id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Enlace copiado");
-    } catch {
-      toast(url);
-    }
-  };
 
   const creator = task.created_by ? people?.get(task.created_by) : null;
 
@@ -106,6 +98,7 @@ export function TaskDetailSheet({ data, taskId, onNavigate, onClose, footer }: P
     >
       <SheetContent
         side="right"
+        hideClose
         className="flex w-full flex-col gap-0 overflow-y-auto p-0 focus-visible:outline-none sm:max-w-[560px]"
         // Por defecto Radix enfoca el primer control (el selector de sección) y
         // en móvil abriría teclados; se enfoca el panel y Tab recorre desde ahí.
@@ -127,7 +120,7 @@ export function TaskDetailSheet({ data, taskId, onNavigate, onClose, footer }: P
           }
         }}
       >
-        <div className="flex items-center gap-1 border-b px-4 py-3 pr-12">
+        <div className="flex items-center gap-1 border-b px-4 py-3">
           {parent ? (
             <Button variant="ghost" size="sm" className="-ml-2 h-8 min-w-0 gap-1.5 text-muted-foreground" onClick={() => onNavigate(parent.id)}>
               <ArrowLeft className="size-4 shrink-0" />
@@ -148,9 +141,6 @@ export function TaskDetailSheet({ data, taskId, onNavigate, onClose, footer }: P
             </Select>
           )}
           <div className="ml-auto flex items-center">
-            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" onClick={copyLink} aria-label="Copiar enlace">
-              <Link2 className="size-4" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -160,6 +150,12 @@ export function TaskDetailSheet({ data, taskId, onNavigate, onClose, footer }: P
             >
               <Trash2 className="size-4" />
             </Button>
+            {/* Cerrar en la misma fila y tamaño que eliminar (la X de la esquina quedaba desalineada). */}
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label="Cerrar">
+                <X className="size-4" />
+              </Button>
+            </SheetClose>
           </div>
         </div>
 
@@ -180,11 +176,7 @@ export function TaskDetailSheet({ data, taskId, onNavigate, onClose, footer }: P
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(["high", "medium", "low"] as TodoPriority[]).map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {PRIORITY_LABEL[p]}
-                  </SelectItem>
-                ))}
+                <PrioritySelectItems />
               </SelectContent>
             </Select>
             <label className="flex h-8 items-center gap-1.5 rounded-md border px-2 text-sm">

@@ -16,11 +16,15 @@
 
 ## Cambios
 
-**Formulario de nueva tarea.** "Añadir tarea" (en cada columna o sección) y el botón "Nueva tarea" del encabezado abren un formulario con:
-- título, descripción, sección, prioridad, fecha límite y recordatorio (Beta);
-- subtareas: se escriben y se añaden con Enter.
+**Formulario de nueva tarea** (iteración 3):
+- Las tareas se crean **sólo desde su sección** ("Añadir tarea" de cada columna o grupo). No hay botón "Nueva tarea" arriba ni selector de sección.
+- Campos: título, descripción, prioridad, fecha límite y recordatorio (Beta). **Sin subtareas:** se agregan en el detalle, una vez creada la tarea, igual que comentarios y adjuntos.
+- **Un solo botón, "Crear tarea".** Se probó "Crear y abrir" y luego una casilla "Abrir al crearla"; ambas confundían y se quitaron.
+- El "Añadir tarea rápida" del Home sigue siendo sólo título, con selector de tablero.
 
-"Crear y abrir" deja la tarea abierta para comentar y adjuntar, porque un comentario necesita que la tarea exista. El "Añadir tarea rápida" del Home sigue siendo sólo título y ahora permite elegir el tablero.
+**Prioridad con banderas de color:** 🔴 Alta, 🟠 Media y 🔵 Baja, en tarjetas, filas, selectores y el Home. Los colores superan 3:1 sobre blanco (mínimo para iconos); la etiqueta va en gris.
+
+**Menú "⋯" del tablero, arriba a la derecha:** reúne vista (Kanban / Lista), "Mostrar completadas" y, para quien puede gestionarlo, renombrar, personas y archivar. Reemplaza el toggle con texto y el interruptor sueltos. En móvil, la búsqueda baja a su propia fila.
 
 **Un solo tipo de tablero** (migraciones `20260930100000_shared_boards.sql` y `20260930110000_boards_single_kind.sql`).
 
@@ -40,6 +44,25 @@
 - **Personas del tablero** (sólo admins): añadir o quitar personas; el creador aparece fijo.
 - **Home:** suma las tareas de todos los tableros de la persona.
 
+## Revisión de UI (escritorio 1440 px y móvil 390 px)
+
+Nuevo test `e2e/sprint-08-revision-ui.spec.ts`. Recorre 13 pantallas (14 en móvil) y falla si:
+- algo se sale de la pantalla;
+- hay scroll horizontal;
+- se ensancha la ventana de layout en móvil;
+- una tabla no cabe;
+- hay errores de consola.
+
+Encontró y quedaron corregidos:
+
+1. **Móvil, crítico:** abrir el menú "⋯" en kanban colapsaba la página a ~30 px. Unos textos `sr-only` (posición absoluta) escapaban del contenedor con scroll horizontal y ensanchaban la ventana de layout a 1013 px; Radix compensaba ese "hueco" con 623 px de margen. Arreglo: `relative` en el contenedor del kanban.
+2. Diálogos que se salían por la derecha con emails largos: `grid-cols-[minmax(0,1fr)]` en `Dialog` y `AlertDialog`.
+3. En el formulario, el botón de recordatorio se salía del diálogo (3 columnas eran muy estrechas).
+4. "Usuarios y roles" en móvil: la columna Rol quedaba cortada; el rol pasa bajo el nombre.
+5. Home en móvil: la tarea rápida quedaba muy estrecha junto al selector de tablero.
+6. El composer fijo de comentarios tapaba el último comentario al desplazarse hacia él.
+7. Al abrir "Personas del tablero", el foco caía en "Cancelar" mientras cargaban las personas.
+
 ## Pruebas
 
 - **RLS:** 9 verificaciones del modelo nuevo (55 en total):
@@ -48,4 +71,4 @@
   - un admin crea un tablero solo y luego añade personas;
   - quien es quitado pierde el acceso;
   - el creador no se puede quitar.
-- **e2e:** el Sprint 1 se reescribió con el modelo nuevo (8 pruebas) y hay 3 pruebas nuevas del formulario de tarea (64 en total).
+- **e2e:** el Sprint 1 se reescribió con el modelo nuevo (8 pruebas), 4 pruebas del formulario de tarea y la revisión de UI en escritorio y móvil (67 en total).

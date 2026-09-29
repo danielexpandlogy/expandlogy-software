@@ -82,17 +82,17 @@ const Users = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-6">Usuario</TableHead>
+                <TableHead className="pl-4 sm:pl-6">Usuario</TableHead>
                 <TableHead className="hidden md:table-cell">Alta</TableHead>
-                <TableHead className="w-40">Rol</TableHead>
-                <TableHead className="w-12 pr-6" />
+                <TableHead className="hidden w-40 sm:table-cell">Rol</TableHead>
+                <TableHead className="w-12 pr-4 sm:pr-6" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading
                 ? Array.from({ length: 3 }, (_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={4} className="px-6">
+                      <TableCell colSpan={4} className="px-4 sm:px-6">
                         <Skeleton className="h-9 w-full" />
                       </TableCell>
                     </TableRow>
@@ -101,7 +101,7 @@ const Users = () => {
                     const isMe = u.id === me?.id;
                     return (
                       <TableRow key={u.id}>
-                        <TableCell className="pl-6">
+                        <TableCell className="pl-4 sm:pl-6">
                           <div className="flex items-center gap-3">
                             <Avatar className="size-9">
                               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -119,13 +119,32 @@ const Users = () => {
                                 )}
                               </div>
                               <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                              {/* En móvil el rol va aquí; la columna "Rol" no cabe. */}
+                              <div className="mt-2 w-36 sm:hidden">
+                              <Select
+                                value={u.role}
+                                disabled={isMe || updateRole.isPending}
+                                onValueChange={(role) => updateRole.mutate({ id: u.id, role: role as AppRole })}
+                              >
+                                <SelectTrigger className="h-8" aria-label={`Rol de ${u.email}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ROLES.map((r) => (
+                                    <SelectItem key={r} value={r}>
+                                      {ROLE_LABEL[r]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              </div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
                           {format(new Date(u.created_at), "d MMM yyyy", { locale: es })}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <Select
                             value={u.role}
                             disabled={isMe || updateRole.isPending}
@@ -143,7 +162,7 @@ const Users = () => {
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell className="pr-6">
+                        <TableCell className="pr-4 sm:pr-6">
                           <Button
                             variant="ghost"
                             size="icon"

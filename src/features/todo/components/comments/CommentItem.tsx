@@ -67,7 +67,8 @@ export function CommentItem({
   };
 
   return (
-    <article className={cn("flex gap-3", status === "sending" && "opacity-60")} aria-label={`Comentario de ${name}`}>
+    // scroll-mb: el composer queda fijo abajo; al llevar un comentario a la vista no debe taparlo.
+    <article className={cn("flex scroll-mb-40 gap-3", status === "sending" && "opacity-60")} aria-label={`Comentario de ${name}`}>
       <Avatar className="size-8 shrink-0">
         <AvatarFallback className="bg-primary/10 text-[11px] font-semibold text-primary">
           {deletedAuthor ? <UserX className="size-4 text-muted-foreground" /> : author ? initials(author.full_name, author.email) : ""}

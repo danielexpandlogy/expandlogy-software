@@ -253,7 +253,7 @@ Tienen una respuesta por defecto para no bloquear el trabajo; el dueño de produ
 
 **Preguntas abiertas:** se aplicaron las respuestas por defecto de la tabla anterior (P1–P6).
 
-*Actualizado tras el Sprint 8: RLS 55/55, e2e 64/64 (+1 de rendimiento).*
+*Actualizado tras el Sprint 8: RLS 55/55, e2e 67/67 (+1 de rendimiento), revisión de UI en escritorio y móvil sin problemas.*
 
 **Cómo se verifica** (todo contra el proyecto real de Supabase, con identidades temporales que se crean y se borran en cada corrida):
 

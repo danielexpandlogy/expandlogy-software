@@ -3,17 +3,10 @@ import { es } from "date-fns/locale";
 import { Bell, CalendarDays, ListChecks, MessageSquare } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Task } from "@/lib/database.types";
-import { PRIORITY_CLASS, PRIORITY_LABEL } from "@/lib/labels";
 import { isOverdue, parseDueDate } from "@/lib/todo-stats";
 import { cn } from "@/lib/utils";
+import { PriorityFlag } from "./PriorityFlag";
 
-export function PriorityChip({ priority }: { priority: Task["priority"] }) {
-  return (
-    <span className={cn("rounded-md px-1.5 py-0.5 text-xs font-medium", PRIORITY_CLASS[priority])}>
-      {PRIORITY_LABEL[priority]}
-    </span>
-  );
-}
 
 const shortDate = (d: Date) => format(d, isSameYear(d, new Date()) ? "d MMM" : "d MMM yyyy", { locale: es });
 
@@ -51,7 +44,7 @@ interface MetaProps {
 export function TaskMeta({ task, subtasks, comments, className }: MetaProps) {
   return (
     <div className={cn("flex flex-wrap items-center gap-x-2.5 gap-y-1", className)}>
-      <PriorityChip priority={task.priority} />
+      <PriorityFlag priority={task.priority} />
       <DueDateLabel task={task} />
       <ReminderLabel reminderAt={task.reminder_at} />
       {subtasks && (

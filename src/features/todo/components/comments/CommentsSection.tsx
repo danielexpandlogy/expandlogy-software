@@ -126,7 +126,7 @@ export function CommentsSection({ task }: { task: Task }) {
             />
           ))}
           {!list.length && !pending.length && <p className="text-sm text-muted-foreground">Aún no hay comentarios.</p>}
-          <div ref={endRef} />
+          <div ref={endRef} className="scroll-mb-40" />
         </div>
       )}
 

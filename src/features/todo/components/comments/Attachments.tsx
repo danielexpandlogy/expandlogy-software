@@ -119,27 +119,45 @@ function ImageLightbox({
   );
 }
 
-/** Reproductor compacto sobre <audio> nativo. */
+/**
+ * Reproductor compacto sobre <audio> nativo. La duración se toma de la base
+ * (medida al grabar): los WebM de MediaRecorder no la traen y el navegador
+ * reporta Infinity/NaN. Si el navegador no puede reproducir el archivo, se dice
+ * y se ofrece descargarlo, en vez de quedarse sin hacer nada.
+ */
 export function AudioPlayer({ src, durationMs }: { src?: string; durationMs?: number | null }) {
   const audio = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [total, setTotal] = useState((durationMs ?? 0) / 1000);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const el = audio.current;
     if (!el) return;
+    setFailed(false);
     const onTime = () => setCurrent(el.currentTime);
-    const onMeta = () => Number.isFinite(el.duration) && setTotal(el.duration);
-    const onEnd = () => setPlaying(false);
+    const onMeta = () => {
+      if (Number.isFinite(el.duration) && el.duration > 0) setTotal(el.duration);
+    };
+    const onEnd = () => {
+      setPlaying(false);
+      setCurrent(0);
+    };
+    const onPause = () => setPlaying(false);
     const onPlay = () => setPlaying(true);
+    const onError = () => {
+      setPlaying(false);
+      setFailed(true);
+    };
     const events: [string, () => void][] = [
       ["timeupdate", onTime],
       ["loadedmetadata", onMeta],
       ["durationchange", onMeta],
       ["ended", onEnd],
-      ["pause", onEnd],
+      ["pause", onPause],
       ["play", onPlay],
+      ["error", onError],
     ];
     for (const [name, fn] of events) el.addEventListener(name, fn);
     return () => {
@@ -150,39 +168,52 @@ export function AudioPlayer({ src, durationMs }: { src?: string; durationMs?: nu
   const toggle = () => {
     const el = audio.current;
     if (!el || !src) return;
-    if (el.paused) void el.play();
+    if (el.paused) el.play().catch(() => setFailed(true));
     else el.pause();
   };
 
+  const shown = total > 0 ? Math.min(current, total) : current;
+
   return (
-    <div className="flex max-w-sm items-center gap-2 rounded-full border bg-muted/40 py-1 pl-1 pr-3" data-testid="audio-player">
-      <audio ref={audio} src={src} preload="metadata" />
-      <Button
-        type="button"
-        size="icon"
-        className="size-8 shrink-0 rounded-full"
-        onClick={toggle}
-        disabled={!src}
-        aria-label={playing ? "Pausar audio" : "Reproducir audio"}
-      >
-        {playing ? <Pause className="size-3.5 fill-current" /> : <Play className="ml-0.5 size-3.5 fill-current" />}
-      </Button>
-      <input
-        type="range"
-        min={0}
-        max={total || 0}
-        step={0.1}
-        value={current}
-        onChange={(e) => {
-          if (audio.current) audio.current.currentTime = Number(e.target.value);
-        }}
-        aria-label="Posición del audio"
-        className="h-1 min-w-0 flex-1 cursor-pointer accent-primary"
-      />
-      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-        {formatDuration((playing || current ? current : total) * 1000)}
-        {total > 0 && (playing || current > 0) ? ` / ${formatDuration(total * 1000)}` : ""}
-      </span>
+    <div className="max-w-sm space-y-1" data-testid="audio-player">
+      <div className="flex items-center gap-2 rounded-full border bg-muted/40 py-1 pl-1 pr-3">
+        <audio ref={audio} src={src} preload="metadata" />
+        <Button
+          type="button"
+          size="icon"
+          className="size-8 shrink-0 rounded-full"
+          onClick={toggle}
+          disabled={!src}
+          aria-label={playing ? "Pausar audio" : "Reproducir audio"}
+        >
+          {playing ? <Pause className="size-3.5 fill-current" /> : <Play className="ml-0.5 size-3.5 fill-current" />}
+        </Button>
+        <input
+          type="range"
+          min={0}
+          max={total || 1}
+          step={0.1}
+          value={shown}
+          onChange={(e) => {
+            if (audio.current) audio.current.currentTime = Number(e.target.value);
+          }}
+          aria-label="Posición del audio"
+          className="h-1 min-w-0 flex-1 cursor-pointer accent-primary"
+        />
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {playing || current > 0 ? `${formatDuration(shown * 1000)} / ${formatDuration(total * 1000)}` : formatDuration(total * 1000)}
+        </span>
+      </div>
+      {failed && (
+        <p role="alert" className="px-2 text-xs text-destructive">
+          Este navegador no pudo reproducir el audio.{" "}
+          {src && (
+            <a href={`${src}&download`} download className="font-medium underline underline-offset-2">
+              Descargar
+            </a>
+          )}
+        </p>
+      )}
     </div>
   );
 }

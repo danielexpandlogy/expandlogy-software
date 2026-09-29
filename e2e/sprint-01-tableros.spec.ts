@@ -105,8 +105,11 @@ test("cada persona asignada ve el tablero de equipo en su menú y puede trabajar
   await sidebar(page).getByRole("link", { name: "Equipo Ventas" }).click();
   await expect(page).toHaveURL(new RegExp(`${teamBoardUrl}$`));
   await addTaskViaForm(page, page.getByRole("region", { name: "Sección Por hacer" }), "Llamar a cliente Acme");
-  // Un usuario no gestiona un tablero que no creó.
-  await expect(page.getByRole("button", { name: "Opciones del tablero" })).toHaveCount(0);
+  // Un usuario no gestiona un tablero que no creó: el menú sólo trae vista y completadas.
+  await page.getByRole("button", { name: "Opciones del tablero" }).click();
+  await expect(page.getByRole("menuitemradio", { name: "Lista" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Renombrar" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   // Tarea rápida desde el Home, eligiendo el tablero.
   await page.goto("/");

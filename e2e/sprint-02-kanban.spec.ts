@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./support/fixtures";
-import { addTaskViaForm, createBoardFor, login, waitForWrite } from "./support/identities";
+import { addTaskViaForm, createBoardFor, login, toggleShowCompleted, waitForWrite } from "./support/identities";
 
 test.describe.configure({ mode: "serial" });
 
@@ -121,11 +121,11 @@ test("las completadas se ocultan y 'Mostrar completadas' las vuelve a mostrar", 
   await saved;
   await expect(card(page, "Tres")).toHaveCount(0);
 
-  await page.getByLabel("Mostrar completadas").click();
+  await toggleShowCompleted(page);
   await expect(card(page, "Tres")).toBeVisible();
   await page.reload();
   await expect(card(page, "Tres")).toBeVisible(); // la preferencia se recuerda
-  await page.getByLabel("Mostrar completadas").click();
+  await toggleShowCompleted(page);
   await expect(card(page, "Tres")).toHaveCount(0);
 });
 

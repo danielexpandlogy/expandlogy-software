@@ -1,12 +1,17 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, MoreHorizontal, Pencil, Users } from "lucide-react";
+import { Archive, Columns3, List, MoreHorizontal, Pencil, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -22,16 +27,26 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import type { Board } from "@/lib/database.types";
 import { useUpdateBoard } from "../../api/boards";
+import type { BoardView } from "../../lib/use-board-view";
 import { MembersDialog } from "../boards/MembersDialog";
 
 interface Props {
   board: Board;
   subtitle?: string;
-  /** Controles a la derecha (cambio de vista, mostrar completadas…). */
+  view: BoardView;
+  onViewChange: (view: BoardView) => void;
+  showCompleted: boolean;
+  onShowCompletedChange: (show: boolean) => void;
+  /** Controles junto al menú (búsqueda, estado de conexión). */
   children?: ReactNode;
 }
 
-export function BoardHeader({ board, subtitle, children }: Props) {
+/**
+ * Nombre del tablero a la izquierda; a la derecha la búsqueda y un único menú
+ * "⋯" con la vista (kanban/lista), "Mostrar completadas" y, para quien puede
+ * gestionarlo, renombrar, personas y archivar.
+ */
+export function BoardHeader({ board, subtitle, view, onViewChange, showCompleted, onShowCompletedChange, children }: Props) {
   const { isAdmin, session } = useAuth();
   // Renombrar/archivar: quien lo creó o un admin. Personas: sólo un admin.
   const canManage = isAdmin || board.owner_id === session?.user.id;
@@ -60,8 +75,8 @@ export function BoardHeader({ board, subtitle, children }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div className="flex min-w-0 items-center gap-2">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+      <div className="order-1 min-w-0 flex-1">
         {renaming ? (
           <form onSubmit={submitRename} className="w-full max-w-sm">
             <Input
@@ -82,20 +97,47 @@ export function BoardHeader({ board, subtitle, children }: Props) {
             />
           </form>
         ) : (
-          <div className="min-w-0">
+          <>
             <h2 className="truncate text-2xl font-semibold tracking-tight">{board.name}</h2>
             {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
-          </div>
+          </>
         )}
-        {canManage && !renaming && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground">
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Opciones del tablero</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+      </div>
+
+      {/* En móvil los controles bajan a su propia fila a lo ancho; el menú queda junto al título. */}
+      {children && (
+        <div className="order-3 flex w-full flex-wrap items-center gap-2 md:order-2 md:w-auto">{children}</div>
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" className="order-2 size-9 shrink-0 bg-card md:order-3">
+            <MoreHorizontal className="size-4" />
+            <span className="sr-only">Opciones del tablero</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">Vista</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={view} onValueChange={(v) => onViewChange(v as BoardView)}>
+            <DropdownMenuRadioItem value="kanban">
+              <Columns3 className="mr-2 size-4" /> Kanban
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="lista">
+              <List className="mr-2 size-4" /> Lista
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuCheckboxItem
+            checked={showCompleted}
+            onCheckedChange={(v) => onShowCompletedChange(v === true)}
+            // No cerrar: se ve el efecto al instante detrás del menú.
+            onSelect={(e) => e.preventDefault()}
+          >
+            Mostrar completadas
+          </DropdownMenuCheckboxItem>
+          {canManage && (
+            <>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={startRename}>
                 <Pencil className="mr-2 size-4" /> Renombrar
               </DropdownMenuItem>
@@ -107,11 +149,10 @@ export function BoardHeader({ board, subtitle, children }: Props) {
               <DropdownMenuItem onSelect={() => setConfirmArchive(true)} className="text-destructive focus:text-destructive">
                 <Archive className="mr-2 size-4" /> Archivar tablero
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {isAdmin && (
         <MembersDialog board={board} open={managingMembers} onOpenChange={setManagingMembers} />

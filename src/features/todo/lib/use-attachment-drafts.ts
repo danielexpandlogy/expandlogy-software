@@ -5,6 +5,7 @@ import type { NewAttachment } from "@/lib/database.types";
 import {
   BUCKET,
   classify,
+  finishRecording,
   MAX_ATTACHMENTS,
   prepareImage,
   probeAudioDuration,
@@ -112,7 +113,7 @@ export function useAttachmentDrafts(boardId: string, taskId: string) {
         ...prev,
         { id, kind: "audio", name: "Nota de voz", previewUrl: URL.createObjectURL(blob), status: "processing", progress: 0 },
       ]);
-      void upload(id, blob, blob.type, { durationMs });
+      void finishRecording(blob, durationMs).then((fixed) => upload(id, fixed, blob.type, { durationMs }));
     },
     [upload],
   );

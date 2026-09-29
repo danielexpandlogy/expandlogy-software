@@ -1,3 +1,4 @@
+import fixWebmDuration from "fix-webm-duration";
 import { supabase } from "@/lib/supabase";
 
 export const BUCKET = "task-attachments";
@@ -98,13 +99,27 @@ export function probeAudioDuration(blob: Blob): Promise<number | null> {
   });
 }
 
-/** Formato de grabación que soporta el navegador (Chrome/Firefox: WebM; Safari: MP4). */
-export function recordingMimeType(): string | null {
+/**
+ * Formato de grabación. Primero MP4/AAC (Chrome, Edge y Safari lo graban y
+ * TODOS lo reproducen); WebM/Opus sólo como respaldo (Firefox). Los WebM de
+ * MediaRecorder no traen duración en la cabecera y Safari puede no
+ * reproducirlos desde la red: ver finishRecording.
+ */
+export const RECORDING_TYPES = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+
+export function recordingMimeType(isSupported = (t: string) => MediaRecorder.isTypeSupported(t)): string | null {
   if (typeof MediaRecorder === "undefined") return null;
-  for (const t of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]) {
-    if (MediaRecorder.isTypeSupported(t)) return t;
+  return RECORDING_TYPES.find((t) => isSupported(t)) ?? null;
+}
+
+/** A un WebM de MediaRecorder se le escribe la duración en la cabecera (reproducible y con barra de avance). */
+export async function finishRecording(blob: Blob, durationMs: number): Promise<Blob> {
+  if (baseType(blob.type) !== "audio/webm") return blob;
+  try {
+    return await fixWebmDuration(blob, durationMs, { logger: false });
+  } catch {
+    return blob;
   }
-  return null;
 }
 
 // Subidas en curso, para avisar antes de cerrar el panel.

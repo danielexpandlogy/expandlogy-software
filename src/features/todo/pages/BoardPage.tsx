@@ -1,18 +1,15 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { Archive, ArrowLeft, Plus, Search, WifiOff } from "lucide-react";
+import { Archive, ArrowLeft, Search, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { BoardNotFoundError, useBoard } from "../api/board";
 import { useBoards } from "../api/boards";
 import { useBoardRealtime } from "../api/realtime";
 import { BoardHeader } from "../components/board/BoardHeader";
 import { KanbanView } from "../components/board/KanbanView";
-import { ViewToggle } from "../components/board/ViewToggle";
 import { ListView } from "../components/list/ListView";
 // El panel de detalle (comentarios, adjuntos, grabadora) se carga al abrir una tarea.
 const TaskDetailPanel = lazy(() => import("../components/task/TaskDetailPanel"));
@@ -30,8 +27,8 @@ const BoardPage = () => {
   const [showCompleted, setShowCompleted] = useLocalState(`todo:showCompleted:${boardId}`, false);
   const [view, setView] = useBoardView(boardId);
   const [query, setQuery] = useState("");
-  // Sección en la que se abrió "Nueva tarea" (undefined = cerrado; "" = la primera).
-  const [newTaskIn, setNewTaskIn] = useState<string | undefined>(undefined);
+  // Sección desde la que se abrió "Añadir tarea" (null = cerrado).
+  const [newTaskIn, setNewTaskIn] = useState<string | null>(null);
   const realtime = useBoardRealtime(data ? boardId : undefined);
   // Las vistas reciben las tareas filtradas; el detalle, el tablero completo.
   const visibleData = useMemo(() => (data && query ? { ...data, tasks: filterTasks(data.tasks, query) } : data), [data, query]);
@@ -67,13 +64,20 @@ const BoardPage = () => {
 
   return (
     <div className="space-y-5">
-      <BoardHeader board={data.board} subtitle={subtitle}>
+      <BoardHeader
+        board={data.board}
+        subtitle={subtitle}
+        view={view}
+        onViewChange={setView}
+        showCompleted={showCompleted}
+        onShowCompletedChange={setShowCompleted}
+      >
         {realtime === "offline" && (
           <span role="status" className="flex items-center gap-1.5 rounded-md bg-warning/15 px-2 py-1 text-xs font-medium text-[hsl(28_90%_30%)]">
             <WifiOff className="size-3.5" /> Sin conexión, reintentando…
           </span>
         )}
-        <div className="relative">
+        <div className="relative w-full md:w-auto">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -81,18 +85,8 @@ const BoardPage = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar en el tablero…"
             aria-label="Buscar en el tablero"
-            className="h-9 w-full bg-card pl-8 sm:w-52"
+            className="h-9 w-full bg-card pl-8 md:w-56"
           />
-        </div>
-        <ViewToggle view={view} onChange={setView} />
-        <Button onClick={() => setNewTaskIn("")} className="h-9">
-          <Plus className="mr-1.5 size-4" /> Nueva tarea
-        </Button>
-        <div className="flex items-center gap-2 pl-1">
-          <Switch id="show-completed" checked={showCompleted} onCheckedChange={setShowCompleted} />
-          <Label htmlFor="show-completed" className="cursor-pointer text-sm font-normal text-muted-foreground">
-            Mostrar completadas
-          </Label>
         </div>
       </BoardHeader>
       {query && visibleData && !visibleData.tasks.length && (
@@ -103,14 +97,13 @@ const BoardPage = () => {
       ) : (
         <ListView data={visibleData!} showCompleted={showCompleted} onOpenTask={openTask} onAddTask={setNewTaskIn} />
       )}
-      {newTaskIn !== undefined && (
+      {newTaskIn !== null && (
         <Suspense fallback={null}>
           <NewTaskDialog
             data={data}
             open
-            onOpenChange={(o) => !o && setNewTaskIn(undefined)}
-            sectionId={newTaskIn || undefined}
-            onOpenTask={openTask}
+            onOpenChange={(o) => !o && setNewTaskIn(null)}
+            sectionId={newTaskIn}
           />
         </Suspense>
       )}

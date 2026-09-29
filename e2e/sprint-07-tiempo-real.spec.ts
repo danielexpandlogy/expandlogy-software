@@ -1,6 +1,6 @@
 import type { Browser, Page } from "@playwright/test";
 import { expect, test } from "./support/fixtures";
-import { addTaskViaForm, createBoardFor, login, waitForWrite, type Identity } from "./support/identities";
+import { addTaskViaForm, createBoardFor, login, setView, waitForWrite, type Identity } from "./support/identities";
 
 test.describe.configure({ mode: "serial" });
 
@@ -103,7 +103,7 @@ test("buscar en el tablero filtra en ambas vistas (y conserva la tarea si coinci
   await page.getByLabel("Buscar en el tablero").fill("factura");
   await expect(card(page, "Tarea compartida")).toBeVisible();
   await expect(card(page, "Creada por Ana")).toHaveCount(0);
-  await page.getByRole("radio", { name: "Lista" }).click();
+  await setView(page, "Lista");
   await expect(card(page, "Tarea compartida")).toBeVisible();
   await expect(card(page, "Creada por Ana")).toHaveCount(0);
   await page.getByLabel("Buscar en el tablero").fill("no existe nada así");

@@ -12,10 +12,11 @@ interface Props {
   locked?: string[];
   /** Cómo se marca a quien no se puede quitar: "tú", "creador"… */
   lockedLabel?: string;
+  autoFocus?: boolean;
 }
 
 /** Selección múltiple de personas del equipo (admins y usuarios). Sólo admins: lee todos los perfiles. */
-export function MemberPicker({ value, onChange, locked = [], lockedLabel = "fijo" }: Props) {
+export function MemberPicker({ value, onChange, locked = [], lockedLabel = "fijo", autoFocus }: Props) {
   const { data: profiles = [], isLoading } = useProfiles();
   const selected = profiles.filter((p) => value.includes(p.id));
   const toggle = (id: string) => {
@@ -46,7 +47,7 @@ export function MemberPicker({ value, onChange, locked = [], lockedLabel = "fijo
         </ul>
       )}
       <Command className="rounded-lg border">
-        <CommandInput placeholder="Buscar persona por nombre o email…" />
+        <CommandInput placeholder="Buscar persona por nombre o email…" autoFocus={autoFocus} />
         <CommandList className="max-h-52">
           <CommandEmpty>{isLoading ? "Cargando…" : "Sin resultados."}</CommandEmpty>
           <CommandGroup>

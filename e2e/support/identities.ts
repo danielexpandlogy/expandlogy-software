@@ -84,6 +84,24 @@ export async function addTaskViaForm(page: Page, section: Locator, title: string
   await expectHidden(dialog);
 }
 
+/** Menú "⋯" del tablero (vista, mostrar completadas y opciones). */
+export async function openBoardMenu(page: Page) {
+  await page.getByRole("button", { name: "Opciones del tablero" }).click();
+  return page.getByRole("menu");
+}
+
+export async function setView(page: Page, view: "Kanban" | "Lista") {
+  const menu = await openBoardMenu(page);
+  await menu.getByRole("menuitemradio", { name: view }).click();
+}
+
+/** Alterna "Mostrar completadas" (el menú queda abierto; se cierra con Escape). */
+export async function toggleShowCompleted(page: Page) {
+  const menu = await openBoardMenu(page);
+  await menu.getByRole("menuitemcheckbox", { name: "Mostrar completadas" }).click();
+  await page.keyboard.press("Escape");
+}
+
 async function expectHidden(locator: Locator) {
   await locator.waitFor({ state: "hidden" });
 }

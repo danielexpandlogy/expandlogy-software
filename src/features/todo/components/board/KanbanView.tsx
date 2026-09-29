@@ -54,8 +54,11 @@ export function KanbanView({ data, showCompleted, onOpenTask, onAddTask }: Props
       onDragEnd={dnd.dndProps.onDragEnd}
       onDragCancel={dnd.dndProps.onDragCancel}
     >
+      {/* relative: los elementos absolutos de dentro (p. ej. textos sr-only) toman este
+          contenedor como referencia y se recortan con su scroll. Si no, escapan y
+          ensanchan la página en móvil (la ventana de layout crecía a ~1000 px). */}
       <div
-        className="-mx-4 flex h-[calc(100svh-13rem)] min-h-[24rem] snap-x snap-mandatory scroll-px-4 items-start gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0"
+        className="relative -mx-4 flex h-[calc(100svh-13rem)] min-h-[24rem] snap-x snap-mandatory scroll-px-4 items-start gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0"
         data-testid="kanban"
       >
         <SortableContext items={dnd.sectionIds} strategy={horizontalListSortingStrategy}>

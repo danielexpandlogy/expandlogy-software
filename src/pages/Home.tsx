@@ -20,7 +20,8 @@ import type { Task } from "@/lib/database.types";
 import { CompactTaskItem } from "@/features/todo/components/shared/CompactTaskItem";
 import { byPosition, positionAtEnd } from "@/features/todo/lib/ordering";
 import { topLevel } from "@/features/todo/lib/tree";
-import { displayName, PRIORITY_LABEL } from "@/lib/labels";
+import { displayName, PRIORITY_BG } from "@/lib/labels";
+import { PriorityFlag } from "@/features/todo/components/shared/PriorityFlag";
 import { completedPerDay, todoStats, upcoming } from "@/lib/todo-stats";
 import type { TodoPriority } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
@@ -88,10 +89,10 @@ const Home = () => {
             {greeting(now.getHours())}, {name}
           </h2>
         </div>
-        <form onSubmit={handleQuickAdd} className="flex w-full gap-2 md:max-w-md">
+        <form onSubmit={handleQuickAdd} className="flex w-full flex-wrap gap-2 sm:flex-nowrap md:max-w-md">
           {myBoards.length > 1 && (
             <Select value={quickBoardId} onValueChange={setQuickBoard}>
-              <SelectTrigger className="h-10 w-40 shrink-0 bg-card" aria-label="Tablero de la tarea rápida">
+              <SelectTrigger className="h-10 w-full shrink-0 bg-card sm:w-40" aria-label="Tablero de la tarea rápida">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -108,7 +109,7 @@ const Home = () => {
             value={quickTitle}
             onChange={(e) => setQuickTitle(e.target.value)}
             maxLength={200}
-            className="h-10 bg-card"
+            className="h-10 min-w-0 flex-1 bg-card"
             disabled={!myBoards.length}
           />
           <Button type="submit" size="icon" className="size-10 shrink-0" disabled={!quickTitle.trim() || !quickBoard}>
@@ -192,17 +193,12 @@ const Home = () => {
             {byPriority.map(({ priority, count, share }) => (
               <div key={priority} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{PRIORITY_LABEL[priority]}</span>
+                  <PriorityFlag priority={priority} className="text-sm font-medium text-foreground" />
                   <span className="tabular-nums text-muted-foreground">{count}</span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      priority === "high" && "bg-destructive",
-                      priority === "medium" && "bg-warning",
-                      priority === "low" && "bg-muted-foreground/40",
-                    )}
+                    className={cn("h-full rounded-full transition-all", PRIORITY_BG[priority])}
                     style={{ width: `${share * 100}%` }}
                   />
                 </div>

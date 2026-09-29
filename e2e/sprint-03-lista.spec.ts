@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./support/fixtures";
-import { createBoardFor, login, waitForWrite } from "./support/identities";
+import { createBoardFor, login, openBoardMenu, setView, waitForWrite } from "./support/identities";
 
 test.describe.configure({ mode: "serial" });
 
@@ -45,15 +45,19 @@ test.beforeEach(async ({ page, team }) => {
 test("cambiar a lista actualiza la URL y muestra las secciones como grupos", async ({ page }) => {
   await page.goto(boardUrl);
   await expect(page.getByTestId("kanban")).toBeVisible();
-  await page.getByRole("radio", { name: "Lista" }).click();
+  await setView(page, "Lista");
   await expect(page).toHaveURL(/vista=lista/);
   await expect(page.getByTestId("list-view")).toBeVisible();
   await expect(section(page, "Por hacer").getByRole("listitem")).toHaveText([/Alfa/, /Beta/]);
   // Sin recargar datos: ambas vistas leen la misma caché.
-  await page.getByRole("radio", { name: "Kanban" }).click();
+  await setView(page, "Kanban");
   await expect(page.getByTestId("kanban")).toBeVisible();
-  await page.getByRole("radio", { name: "Lista" }).click();
-  await expect(page.getByRole("radio", { name: "Lista" })).toBeFocused();
+  await setView(page, "Lista");
+  // Al cerrar el menú el foco vuelve a su botón.
+  await expect(page.getByRole("button", { name: "Opciones del tablero" })).toBeFocused();
+  const menu = await openBoardMenu(page);
+  await expect(menu.getByRole("menuitemradio", { name: "Lista" })).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("Escape");
 
   // La vista elegida se recuerda aunque la URL no traiga ?vista.
   await page.goto(boardUrl);
@@ -66,7 +70,7 @@ test("arrastrar una fila a otra sección y verla en kanban", async ({ page }) =>
   await drag(page, item(page, "Beta"), item(section(page, "En progreso"), "Gamma"), 4);
   await saved;
   await expect(section(page, "En progreso").getByRole("listitem")).toHaveText([/Beta/, /Gamma/]);
-  await page.getByRole("radio", { name: "Kanban" }).click();
+  await setView(page, "Kanban");
   await expect(item(section(page, "En progreso"), "Beta")).toBeVisible();
   await page.reload();
   await expect(section(page, "En progreso").getByRole("listitem")).toHaveText([/Beta/, /Gamma/]);

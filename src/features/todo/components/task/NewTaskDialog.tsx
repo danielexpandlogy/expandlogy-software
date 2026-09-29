@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { CalendarDays, Loader2, Plus, X } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,91 +12,66 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TodoPriority } from "@/lib/database.types";
-import { PRIORITY_LABEL } from "@/lib/labels";
 import { useCreateTask } from "../../api/board";
-import { byPosition, positionAtEnd, positionBetween } from "../../lib/ordering";
+import { positionAtEnd } from "../../lib/ordering";
 import type { BoardData } from "../../lib/tree";
+import { PrioritySelectItems } from "../shared/PriorityFlag";
 import { ReminderPicker } from "./ReminderPicker";
 
 interface Props {
   data: BoardData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Sección desde la que se abrió ("Añadir tarea" de una columna). */
-  sectionId?: string;
-  /** "Crear y abrir": abre el detalle para seguir con comentarios y adjuntos. */
-  onOpenTask?: (taskId: string) => void;
+  /** Sección desde la que se abrió "Añadir tarea": la tarea va al final de ella. */
+  sectionId: string;
 }
 
 /**
- * Alta completa de una tarea: título, descripción, sección, prioridad, fecha
- * límite, recordatorio (Beta) y subtareas. Comentarios y adjuntos necesitan que
- * la tarea exista: para eso está "Crear y abrir".
+ * Alta de una tarea desde su sección: título, descripción, prioridad, fecha
+ * límite y recordatorio (Beta). Subtareas, comentarios y adjuntos se añaden en
+ * el detalle, al abrir la tarea ya creada. Un solo botón: "Crear tarea".
  */
-export function NewTaskDialog({ data, open, onOpenChange, sectionId, onOpenTask }: Props) {
+export function NewTaskDialog({ data, open, onOpenChange, sectionId }: Props) {
   const createTask = useCreateTask(data.board.id);
-  const sections = useMemo(() => [...data.sections].sort(byPosition), [data.sections]);
+  const section = data.sections.find((s) => s.id === sectionId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [section, setSection] = useState(sectionId ?? sections[0]?.id ?? "");
   const [priority, setPriority] = useState<TodoPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [reminder, setReminder] = useState<string | null>(null);
-  const [subtasks, setSubtasks] = useState<string[]>([]);
-  const [subtaskDraft, setSubtaskDraft] = useState("");
   const [saving, setSaving] = useState(false);
-  const subtaskInput = useRef<HTMLInputElement>(null);
 
-  // Cada apertura empieza limpia, en la sección desde la que se abrió.
+  // Cada apertura empieza limpia.
   useEffect(() => {
     if (!open) return;
     setTitle("");
     setDescription("");
-    setSection(sectionId ?? sections[0]?.id ?? "");
     setPriority("medium");
     setDueDate("");
     setReminder(null);
-    setSubtasks([]);
-    setSubtaskDraft("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, sectionId]);
-
-  const addSubtask = () => {
-    const t = subtaskDraft.trim();
-    if (!t) return;
-    setSubtasks((prev) => [...prev, t]);
-    setSubtaskDraft("");
-    subtaskInput.current?.focus();
-  };
 
   const canSubmit = !!title.trim() && !!section && !saving;
 
-  const create = async (andOpen: boolean) => {
+  const create = async () => {
     if (!canSubmit) return;
     setSaving(true);
-    const pending = subtaskDraft.trim() ? [...subtasks, subtaskDraft.trim()] : subtasks;
-    const siblings = data.tasks.filter((t) => t.section_id === section && t.parent_id === null);
+    const siblings = data.tasks.filter((t) => t.section_id === sectionId && t.parent_id === null);
     const id = crypto.randomUUID();
     try {
       await createTask.mutateAsync({
         id,
         title: title.trim(),
         description: description.trim(),
-        section_id: section,
+        section_id: sectionId,
         priority,
         due_date: dueDate || null,
         reminder_at: reminder,
         position: positionAtEnd(siblings),
       });
-      let last: string | null = null;
-      for (const sub of pending) {
-        last = positionBetween(last, null);
-        await createTask.mutateAsync({ id: crypto.randomUUID(), title: sub, parent_id: id, position: last });
-      }
       onOpenChange(false);
-      if (andOpen) onOpenTask?.(id);
     } catch {
       // useCreateTask ya muestra el error y deshace el cambio optimista.
     } finally {
@@ -106,7 +81,7 @@ export function NewTaskDialog({ data, open, onOpenChange, sectionId, onOpenTask 
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    void create(false);
+    void create();
   };
 
   return (
@@ -117,14 +92,17 @@ export function NewTaskDialog({ data, open, onOpenChange, sectionId, onOpenTask 
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              void create(false);
+              void create();
             }
           }}
           className="space-y-5"
         >
           <DialogHeader>
             <DialogTitle>Nueva tarea</DialogTitle>
-            <DialogDescription>En {data.board.name}. Podrás añadir comentarios y adjuntos al abrirla.</DialogDescription>
+            <DialogDescription>
+              Se añadirá al final de <span className="font-medium text-foreground">{section?.name}</span>. Las subtareas,
+              comentarios y adjuntos se agregan en la tarea, una vez creada.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
@@ -154,32 +132,13 @@ export function NewTaskDialog({ data, open, onOpenChange, sectionId, onOpenTask 
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Sección</Label>
-              <Select value={section} onValueChange={setSection}>
-                <SelectTrigger aria-label="Sección">
-                  <SelectValue placeholder="Elige una sección" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sections.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>Prioridad</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as TodoPriority)}>
                 <SelectTrigger aria-label="Prioridad">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(["high", "medium", "low"] as TodoPriority[]).map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {PRIORITY_LABEL[p]}
-                    </SelectItem>
-                  ))}
+                  <PrioritySelectItems />
                 </SelectContent>
               </Select>
             </div>
@@ -190,7 +149,7 @@ export function NewTaskDialog({ data, open, onOpenChange, sectionId, onOpenTask 
                 <Input id="new-task-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="pl-9" />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label>Recordatorio</Label>
               <div>
                 <ReminderPicker value={reminder} onChange={setReminder} />
@@ -198,56 +157,10 @@ export function NewTaskDialog({ data, open, onOpenChange, sectionId, onOpenTask 
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="new-task-subtask">Subtareas</Label>
-            {subtasks.length > 0 && (
-              <ul className="divide-y rounded-lg border" aria-label="Subtareas de la nueva tarea">
-                {subtasks.map((s, i) => (
-                  <li key={`${i}-${s}`} className="flex items-center gap-2 px-3 py-2 text-sm">
-                    <span className="min-w-0 flex-1 truncate">{s}</span>
-                    <button
-                      type="button"
-                      onClick={() => setSubtasks((prev) => prev.filter((_, j) => j !== i))}
-                      className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-                      aria-label={`Quitar subtarea ${s}`}
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex gap-2">
-              <Input
-                ref={subtaskInput}
-                id="new-task-subtask"
-                value={subtaskDraft}
-                onChange={(e) => setSubtaskDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  // Enter aquí añade la subtarea, no envía el formulario.
-                  if (e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
-                    e.preventDefault();
-                    addSubtask();
-                  }
-                }}
-                maxLength={500}
-                placeholder="Nombre de la subtarea y Enter"
-              />
-              <Button type="button" variant="outline" size="icon" onClick={addSubtask} disabled={!subtaskDraft.trim()} aria-label="Añadir subtarea">
-                <Plus className="size-4" />
-              </Button>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            {onOpenTask && (
-              <Button type="button" variant="secondary" disabled={!canSubmit} onClick={() => void create(true)}>
-                Crear y abrir
-              </Button>
-            )}
             <Button type="submit" disabled={!canSubmit}>
               {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
               Crear tarea
