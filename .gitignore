@@ -1,0 +1,35 @@
+# Environment variables — never commit real secrets
+.env
+.env.production
+.env.staging
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Lo genera `deno check` al type-checkear Edge Functions. No es la fuente de
+# verdad de las dependencias del proyecto (esa es package-lock.json) y con
+# --node-modules-dir=auto llega a reescribir node_modules y romper el build.
+deno.lock
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.mcp.json
