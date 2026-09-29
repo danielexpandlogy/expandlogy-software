@@ -15,13 +15,10 @@ export type Profile = {
   updated_at: string;
 };
 
-/** personal: sólo su dueño. team: lo crea un admin y lo comparte con varias personas. */
-export type BoardKind = "personal" | "team";
-
 export type Board = {
   id: string;
   name: string;
-  kind: BoardKind;
+  /** Quien lo creó: siempre es miembro y no se le puede quitar. */
   owner_id: string;
   created_by: string | null;
   archived_at: string | null;
@@ -39,7 +36,6 @@ export type BoardMember = {
 export type BoardSummary = {
   id: string;
   name: string;
-  kind: BoardKind;
   owner_id: string;
   /** La persona en sesión es miembro (lo ve en su menú). */
   is_member: boolean;
@@ -188,7 +184,7 @@ export type Database = {
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       can_access_board: { Args: { p_board_id: string }; Returns: boolean };
-      create_board: { Args: { p_name: string; p_kind?: BoardKind; p_member_ids?: string[] }; Returns: string };
+      create_board: { Args: { p_name: string; p_member_ids?: string[] }; Returns: string };
       set_board_members: { Args: { p_board_id: string; p_member_ids: string[] }; Returns: undefined };
       board_people: { Args: { p_board_id: string }; Returns: BoardPerson[] };
       task_comment_counts: { Args: { p_board_id: string }; Returns: { task_id: string; count: number }[] };

@@ -10,10 +10,12 @@ interface Props {
   onChange: (ids: string[]) => void;
   /** Ids que no se pueden quitar (p. ej. quien crea el tablero). */
   locked?: string[];
+  /** Cómo se marca a quien no se puede quitar: "tú", "creador"… */
+  lockedLabel?: string;
 }
 
 /** Selección múltiple de personas del equipo (admins y usuarios). Sólo admins: lee todos los perfiles. */
-export function MemberPicker({ value, onChange, locked = [] }: Props) {
+export function MemberPicker({ value, onChange, locked = [], lockedLabel = "fijo" }: Props) {
   const { data: profiles = [], isLoading } = useProfiles();
   const selected = profiles.filter((p) => value.includes(p.id));
   const toggle = (id: string) => {
@@ -28,6 +30,7 @@ export function MemberPicker({ value, onChange, locked = [] }: Props) {
           {selected.map((p) => (
             <li key={p.id} className="flex items-center gap-1 rounded-full bg-accent py-0.5 pl-2 pr-1 text-xs font-medium text-accent-foreground">
               {displayName(p.full_name, p.email)}
+              {locked.includes(p.id) && <span className="font-normal opacity-70">({lockedLabel})</span>}
               {!locked.includes(p.id) && (
                 <button
                   type="button"

@@ -43,7 +43,7 @@ const BoardsIndex = () => {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">To-do List</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isAdmin ? "Tus tableros y los de tu equipo." : "Tus tableros personales y los de equipo en los que estás."}
+            {isAdmin ? "Tus tableros y los de tu equipo." : "Los tableros que creaste y aquellos a los que te añadieron."}
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -112,8 +112,8 @@ function BoardGrid({ boards, showOwner }: { boards: BoardSummary[]; showOwner?: 
 function BoardCard({ board, showOwner }: { board: BoardSummary; showOwner?: boolean }) {
   const total = board.pending_count + board.completed_count;
   const rate = total ? Math.round((board.completed_count / total) * 100) : 0;
-  const team = board.kind === "team";
-  const Icon = team ? Users : User;
+  const shared = board.member_count > 1;
+  const Icon = shared ? Users : User;
   const owner = board.owner_name || board.owner_email ? displayName(board.owner_name, board.owner_email) : null;
   return (
     <Link to={`/todos/${board.id}`} className="group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -126,7 +126,7 @@ function BoardCard({ board, showOwner }: { board: BoardSummary; showOwner?: bool
             <div className="min-w-0">
               <p className="truncate font-semibold">{board.name}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {team ? `Equipo · ${board.member_count} ${board.member_count === 1 ? "persona" : "personas"}` : "Personal"}
+                {shared ? `${board.member_count} personas` : board.is_member ? "Solo tú" : "1 persona"}
                 {showOwner && owner && ` · ${owner}`}
               </p>
             </div>

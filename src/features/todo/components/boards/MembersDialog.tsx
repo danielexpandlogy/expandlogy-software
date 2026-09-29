@@ -13,7 +13,7 @@ import type { Board } from "@/lib/database.types";
 import { useBoardMembers, useSetBoardMembers } from "../../api/boards";
 import { MemberPicker } from "./MemberPicker";
 
-/** Asignar o quitar personas de un tablero de equipo (sólo admins). */
+/** Añadir o quitar personas de un tablero (sólo admins). Quien lo creó no se puede quitar. */
 export function MembersDialog({ board, open, onOpenChange }: { board: Board; open: boolean; onOpenChange: (o: boolean) => void }) {
   const { data: current } = useBoardMembers(open ? board.id : undefined);
   const setMembers = useSetBoardMembers(board.id);
@@ -32,7 +32,7 @@ export function MembersDialog({ board, open, onOpenChange }: { board: Board; ope
           <DialogTitle>Personas del tablero</DialogTitle>
           <DialogDescription>Quienes estén aquí verán “{board.name}” en su menú y podrán trabajar en él.</DialogDescription>
         </DialogHeader>
-        {current ? <MemberPicker value={value} onChange={setValue} /> : <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />}
+        {current ? <MemberPicker value={value} onChange={setValue} locked={[board.owner_id]} lockedLabel="creador" /> : <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />}
         {setMembers.error && (
           <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {setMembers.error.message}

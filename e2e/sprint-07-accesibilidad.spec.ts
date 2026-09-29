@@ -32,7 +32,7 @@ async function audit(page: Page, label: string) {
 test("índice de tableros (admin)", async ({ page, team }) => {
   await login(page, team.admin);
   await page.goto("/todos");
-  await expect(page.getByRole("heading", { name: "To-do List" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "To-do List", level: 2 })).toBeVisible();
   await audit(page, "índice");
 });
 

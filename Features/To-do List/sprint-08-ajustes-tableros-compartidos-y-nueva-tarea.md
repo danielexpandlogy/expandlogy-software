@@ -22,28 +22,30 @@
 
 "Crear y abrir" deja la tarea abierta para comentar y adjuntar, porque un comentario necesita que la tarea exista. El "Añadir tarea rápida" del Home sigue siendo sólo título y ahora permite elegir el tablero.
 
-**Tableros personales y de equipo** (migración `20260930100000_shared_boards.sql`):
-- `boards.kind`: `personal` o `team`. Se quitó la regla "un tablero activo por usuario".
-- RPC `create_board(name, kind, member_ids)`:
-  - personal: cualquiera, y sólo lo ve quien lo crea;
-  - team: sólo admins; quien lo crea también queda como miembro.
-- RPC `set_board_members(board_id, member_ids)`: sólo admins y sólo tableros de equipo. Un equipo no puede quedar vacío.
-- El dueño de un tablero personal puede renombrarlo y archivarlo. En uno de equipo, sólo un admin.
-- `board_summaries` añade `kind`, `is_member` y `member_count`, y usa `left join` a `profiles`: con tableros compartidos, un usuario no puede leer el perfil del admin que creó el tablero, y el join interno le ocultaba el tablero entero.
-- `create_board_for_user` se conserva por compatibilidad con la versión desplegada; ahora crea un tablero de equipo.
+**Un solo tipo de tablero** (migraciones `20260930100000_shared_boards.sql` y `20260930110000_boards_single_kind.sql`).
+
+*Iteración 2, a pedido del dueño de producto: no hay que elegir entre "personal" y "de equipo".*
+
+- Cualquier persona, admin incluido, crea los tableros que quiera y queda dentro. Se quitó la regla "un tablero activo por usuario".
+- **Sólo un admin** elige quién más entra: al crearlo (opcional, puede crearlo estando solo) o después, con "Personas del tablero". Puede hacerlo en cualquier tablero, también en uno creado por un usuario.
+- Quien creó el tablero (`owner_id`) siempre sigue en él; no se le puede quitar.
+- Renombrar o archivar: quien lo creó o un admin.
+- RPC `create_board(name, member_ids)`: un usuario no puede pasar otras personas. `set_board_members(board_id, member_ids)`: sólo admins, y siempre conserva al creador.
+- `board_summaries` añade `is_member` y `member_count`, y usa `left join` a `profiles`: un usuario no puede leer el perfil del admin que lo añadió, y el join interno le ocultaba el tablero entero.
+- `create_board_for_user` se conserva por compatibilidad con la versión desplegada.
 
 **Interfaz:**
-- **Menú lateral:** bajo To-do List aparecen los tableros de la persona (personales y de equipo asignados).
+- **Menú lateral:** bajo To-do List aparecen los tableros de la persona (los que creó y a los que la añadieron).
 - **Índice:** "Mis tableros" y, para admins, "Otros tableros del equipo".
-- **Tablero de equipo:** "Personas del tablero" para asignar o quitar personas.
+- **Personas del tablero** (sólo admins): añadir o quitar personas; el creador aparece fijo.
 - **Home:** suma las tareas de todos los tableros de la persona.
 
 ## Pruebas
 
-- **RLS:** 7 verificaciones nuevas (54 en total):
-  - varios tableros personales, sin compartirlos;
-  - un usuario no crea equipos ni asigna personas;
-  - todos los miembros de un equipo lo ven;
+- **RLS:** 9 verificaciones del modelo nuevo (55 en total):
+  - varios tableros por persona;
+  - un usuario no mete a otras personas;
+  - un admin crea un tablero solo y luego añade personas;
   - quien es quitado pierde el acceso;
-  - un miembro no renombra un equipo.
-- **e2e:** el Sprint 1 se reescribió con el modelo nuevo y hay 3 pruebas nuevas del formulario (63 en total).
+  - el creador no se puede quitar.
+- **e2e:** el Sprint 1 se reescribió con el modelo nuevo (8 pruebas) y hay 3 pruebas nuevas del formulario de tarea (64 en total).

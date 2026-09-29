@@ -66,9 +66,9 @@ export async function login(page: Page, who: Identity) {
 }
 
 /** Crea el tablero de `owner` por API (como lo haría un admin desde la UI). */
-/** Tablero de equipo creado por un admin con `member` asignado (por API, como en la UI). */
+/** Tablero creado por un admin con `member` dentro (por API, como en la UI). */
 export async function createBoardFor(admin: Identity, member: Identity, name = `Tablero de ${member.name}`) {
-  const { data, error } = await admin.client.rpc("create_board", { p_name: name, p_kind: "team", p_member_ids: [member.id] });
+  const { data, error } = await admin.client.rpc("create_board", { p_name: name, p_member_ids: [member.id] });
   if (error) throw error;
   return data as string;
 }

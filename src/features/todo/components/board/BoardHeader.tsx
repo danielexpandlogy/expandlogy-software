@@ -33,8 +33,8 @@ interface Props {
 
 export function BoardHeader({ board, subtitle, children }: Props) {
   const { isAdmin, session } = useAuth();
-  // Un admin gestiona cualquier tablero; el dueño, su tablero personal.
-  const canManage = isAdmin || (board.kind === "personal" && board.owner_id === session?.user.id);
+  // Renombrar/archivar: quien lo creó o un admin. Personas: sólo un admin.
+  const canManage = isAdmin || board.owner_id === session?.user.id;
   const [managingMembers, setManagingMembers] = useState(false);
   const updateBoard = useUpdateBoard();
   const navigate = useNavigate();
@@ -99,7 +99,7 @@ export function BoardHeader({ board, subtitle, children }: Props) {
               <DropdownMenuItem onSelect={startRename}>
                 <Pencil className="mr-2 size-4" /> Renombrar
               </DropdownMenuItem>
-              {isAdmin && board.kind === "team" && (
+              {isAdmin && (
                 <DropdownMenuItem onSelect={() => setManagingMembers(true)}>
                   <Users className="mr-2 size-4" /> Personas del tablero
                 </DropdownMenuItem>
@@ -113,7 +113,7 @@ export function BoardHeader({ board, subtitle, children }: Props) {
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
 
-      {isAdmin && board.kind === "team" && (
+      {isAdmin && (
         <MembersDialog board={board} open={managingMembers} onOpenChange={setManagingMembers} />
       )}
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import type { BoardKind, BoardSummary } from "@/lib/database.types";
+import type { BoardSummary } from "@/lib/database.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { todoKeys } from "./keys";
 
@@ -24,20 +24,19 @@ export function useBoards() {
   });
 }
 
-/** Tableros en los que la persona está (los de su menú): primero los personales. */
+/** Tableros en los que la persona está (los de su menú), por nombre. */
 export function useMyBoards() {
   const boards = useBoards();
-  const mine = (boards.data ?? [])
-    .filter((b) => b.is_member)
-    .sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name, "es") : a.kind === "personal" ? -1 : 1));
+  const mine = (boards.data ?? []).filter((b) => b.is_member).sort((a, b) => a.name.localeCompare(b.name, "es"));
   return { ...boards, data: mine };
 }
 
 export function useCreateBoard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ name, kind, memberIds = [] }: { name: string; kind: BoardKind; memberIds?: string[] }) => {
-      const { data, error } = await supabase.rpc("create_board", { p_name: name.trim(), p_kind: kind, p_member_ids: memberIds });
+    // Quien crea siempre queda dentro; memberIds (otras personas) sólo lo usa un admin.
+    mutationFn: async ({ name, memberIds = [] }: { name: string; memberIds?: string[] }) => {
+      const { data, error } = await supabase.rpc("create_board", { p_name: name.trim(), p_member_ids: memberIds });
       if (error) throw error;
       return data;
     },

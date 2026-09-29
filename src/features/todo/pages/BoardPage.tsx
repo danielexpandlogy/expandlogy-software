@@ -57,12 +57,13 @@ const BoardPage = () => {
 
   const summary = summaries?.find((b) => b.id === data.board.id);
   const owner = summary && summary.owner_id !== session?.user.id ? summary.owner_name || summary.owner_email : null;
-  const subtitle =
-    data.board.kind === "team"
-      ? `Tablero de equipo${summary ? ` · ${summary.member_count} ${summary.member_count === 1 ? "persona" : "personas"}` : ""}`
-      : owner
-        ? `Tablero personal de ${owner}`
-        : "Tablero personal";
+  const people = summary?.member_count ?? 1;
+  const subtitle = [
+    owner ? `Creado por ${owner}` : null,
+    people > 1 ? `${people} personas` : owner ? null : "Solo tú",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="space-y-5">

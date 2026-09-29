@@ -86,7 +86,7 @@ export function AppSidebar() {
                           <SidebarMenuSubItem key={b.id}>
                             <SidebarMenuSubButton asChild isActive={location.pathname.startsWith(`/todos/${b.id}`)}>
                               <NavLink to={`/todos/${b.id}`} onClick={closeOnMobile}>
-                                {b.kind === "team" ? <Users /> : <UserRound />}
+                                {b.member_count > 1 ? <Users /> : <UserRound />}
                                 <span>{b.name}</span>
                               </NavLink>
                             </SidebarMenuSubButton>
