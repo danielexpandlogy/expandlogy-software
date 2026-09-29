@@ -13,10 +13,6 @@ export default async function sprint1(ctx) {
     assert(ctx.boardId, "no devolvió id");
   });
 
-  await check("no se puede crear un segundo tablero activo para el mismo usuario", () =>
-    expectError(admin.client.rpc("create_board_for_user", { p_user_id: member.id, p_name: "Otro" }), "ya tiene un tablero"),
-  );
-
   await check("el tablero nace con 3 secciones ordenadas", async () => {
     const sections = await ok(member.client.from("sections").select("*").eq("board_id", ctx.boardId).order("position"));
     assert(sections.map((s) => s.name).join() === "Por hacer,En progreso,Listo", JSON.stringify(sections.map((s) => s.name)));

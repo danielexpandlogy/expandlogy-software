@@ -11,9 +11,10 @@ import sprint4 from "./sprint-04.mjs";
 import sprint5 from "./sprint-05.mjs";
 import sprint6 from "./sprint-06.mjs";
 import sprint7 from "./sprint-07.mjs";
+import sprint8 from "./sprint-08.mjs";
 
 // Los sprints 2 y 3 son de UI (sin cambios de permisos): se cubren en e2e.
-const SPRINTS = [sprint1, null, null, sprint4, sprint5, sprint6, sprint7];
+const SPRINTS = [sprint1, null, null, sprint4, sprint5, sprint6, sprint7, sprint8];
 
 const arg = process.argv.indexOf("--sprint");
 const upTo = arg > -1 ? Number(process.argv[arg + 1]) : SPRINTS.length;

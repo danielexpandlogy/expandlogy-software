@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./support/fixtures";
-import { createBoardFor, login, waitForWrite } from "./support/identities";
+import { addTaskViaForm, createBoardFor, login, waitForWrite } from "./support/identities";
 
 test.describe.configure({ mode: "serial" });
 
@@ -30,17 +30,9 @@ test.beforeEach(async ({ page, team }) => {
   await expect(page.getByTestId("kanban")).toBeVisible();
 });
 
-test("crear tareas en línea, encadenadas, al final de la columna", async ({ page }) => {
+test("'Añadir tarea' de una columna abre el formulario en esa sección y la tarea va al final", async ({ page }) => {
   const todo = column(page, "Por hacer");
-  await todo.getByRole("button", { name: "Añadir tarea" }).click();
-  const input = todo.getByPlaceholder("Nombre de la tarea");
-  for (const t of ["Uno", "Dos", "Tres"]) {
-    const saved = waitForWrite(page, "tasks");
-    await input.fill(t);
-    await input.press("Enter");
-    await saved;
-  }
-  await input.press("Escape");
+  for (const t of ["Uno", "Dos", "Tres"]) await addTaskViaForm(page, todo, t);
   await expect(todo.getByRole("listitem")).toHaveText([/Uno/, /Dos/, /Tres/]);
 
   await page.reload();
@@ -109,12 +101,7 @@ test("crear, renombrar y eliminar una sección (con confirmación si tiene tarea
   await renamed;
   await expect(column(page, "En espera")).toBeVisible();
 
-  const created = waitForWrite(page, "tasks");
-  await column(page, "En espera").getByRole("button", { name: "Añadir tarea" }).click();
-  await column(page, "En espera").getByPlaceholder("Nombre de la tarea").fill("Tarea en espera");
-  await page.keyboard.press("Enter");
-  await created;
-  await page.keyboard.press("Escape");
+  await addTaskViaForm(page, column(page, "En espera"), "Tarea en espera");
 
   await page.getByRole("button", { name: "Opciones de la sección En espera" }).click();
   await page.getByRole("menuitem", { name: "Eliminar sección" }).click();

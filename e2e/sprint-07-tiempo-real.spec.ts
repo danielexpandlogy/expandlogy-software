@@ -1,6 +1,6 @@
 import type { Browser, Page } from "@playwright/test";
 import { expect, test } from "./support/fixtures";
-import { createBoardFor, login, waitForWrite, type Identity } from "./support/identities";
+import { addTaskViaForm, createBoardFor, login, waitForWrite, type Identity } from "./support/identities";
 
 test.describe.configure({ mode: "serial" });
 
@@ -35,11 +35,7 @@ test("lo que crea y mueve una persona aparece en la pantalla de la otra sin reca
   await expect(card(daniel.page, "Tarea compartida")).toBeVisible();
   await daniel.page.waitForTimeout(1500); // canal suscrito
 
-  const created = waitForWrite(ana.page, "tasks");
-  await column(ana.page, "Por hacer").getByRole("button", { name: "Añadir tarea" }).click();
-  await ana.page.getByPlaceholder("Nombre de la tarea").fill("Creada por Ana");
-  await ana.page.keyboard.press("Enter");
-  await created;
+  await addTaskViaForm(ana.page, column(ana.page, "Por hacer"), "Creada por Ana");
   await expect(card(column(daniel.page, "Por hacer"), "Creada por Ana")).toBeVisible({ timeout: 5000 });
 
   await card(ana.page, "Tarea compartida").focus();

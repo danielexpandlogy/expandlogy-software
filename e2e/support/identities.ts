@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 function loadEnv(file: string): Record<string, string> {
   if (!existsSync(file)) return {};
@@ -66,13 +66,26 @@ export async function login(page: Page, who: Identity) {
 }
 
 /** Crea el tablero de `owner` por API (como lo haría un admin desde la UI). */
-export async function createBoardFor(admin: Identity, owner: Identity, name = `Tablero de ${owner.name}`) {
-  // Las identidades se comparten por worker: si otro archivo ya le creó un
-  // tablero, se archiva (como haría un admin) para respetar "uno activo por usuario".
-  await admin.client.from("boards").update({ archived_at: new Date().toISOString() }).eq("owner_id", owner.id).is("archived_at", null);
-  const { data, error } = await admin.client.rpc("create_board_for_user", { p_user_id: owner.id, p_name: name });
+/** Tablero de equipo creado por un admin con `member` asignado (por API, como en la UI). */
+export async function createBoardFor(admin: Identity, member: Identity, name = `Tablero de ${member.name}`) {
+  const { data, error } = await admin.client.rpc("create_board", { p_name: name, p_kind: "team", p_member_ids: [member.id] });
   if (error) throw error;
   return data as string;
+}
+
+/** "Añadir tarea" de una sección → formulario completo → sólo título → Enter. */
+export async function addTaskViaForm(page: Page, section: Locator, title: string) {
+  const saved = waitForWrite(page, "tasks");
+  await section.getByRole("button", { name: "Añadir tarea" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nueva tarea" });
+  await dialog.getByLabel("Título").fill(title);
+  await dialog.getByLabel("Título").press("Enter");
+  await saved;
+  await expectHidden(dialog);
+}
+
+async function expectHidden(locator: Locator) {
+  await locator.waitFor({ state: "hidden" });
 }
 
 /** Espera a que una escritura a PostgREST termine con éxito (evita carreras con page.goto). */

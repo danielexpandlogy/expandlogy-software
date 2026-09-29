@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -11,8 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBoard, useCreateTask, useUpdateTask } from "@/features/todo/api/board";
-import { useMyBoard } from "@/features/todo/api/boards";
+import { boardQuery, useCreateTask, useUpdateTask } from "@/features/todo/api/board";
+import { useMyBoards } from "@/features/todo/api/boards";
+import { useLocalState } from "@/features/todo/lib/use-local-state";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Task } from "@/lib/database.types";
 import { CompactTaskItem } from "@/features/todo/components/shared/CompactTaskItem";
 import { byPosition, positionAtEnd } from "@/features/todo/lib/ordering";
 import { topLevel } from "@/features/todo/lib/tree";
@@ -28,15 +32,21 @@ function greeting(hour: number) {
 }
 
 const Home = () => {
-  const { profile, session, isAdmin } = useAuth();
-  // Los KPIs son siempre los del tablero propio, también para un admin.
-  const { data: myBoard, isLoading: boardsLoading } = useMyBoard();
-  const { data: boardData, isLoading: boardLoading } = useBoard(myBoard?.id);
-  const isLoading = boardsLoading || (!!myBoard && boardLoading);
-  const todos = useMemo(() => topLevel(boardData?.tasks ?? []), [boardData?.tasks]);
-  const createTask = useCreateTask(myBoard?.id ?? "");
-  const updateTask = useUpdateTask(myBoard?.id ?? "");
+  const { profile, session } = useAuth();
+  // Los KPIs suman los tableros en los que está la persona (personales y de equipo).
+  const { data: myBoards, isLoading: boardsLoading } = useMyBoards();
+  const boardQueries = useQueries({ queries: myBoards.map((b) => boardQuery(b.id)) });
+  const isLoading = boardsLoading || boardQueries.some((q) => q.isLoading);
+  const allTasks = boardQueries.flatMap((q) => q.data?.tasks ?? []);
+  const tasksKey = boardQueries.map((q) => q.dataUpdatedAt).join();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const todos = useMemo(() => topLevel(allTasks), [tasksKey]);
   const [quickTitle, setQuickTitle] = useState("");
+  // Tablero destino del "Añadir tarea rápida" (se recuerda).
+  const [quickBoardPref, setQuickBoard] = useLocalState<string | null>("todo:quickBoard", null);
+  const quickBoardId = myBoards.some((b) => b.id === quickBoardPref) ? quickBoardPref! : (myBoards[0]?.id ?? "");
+  const quickBoard = boardQueries[myBoards.findIndex((b) => b.id === quickBoardId)]?.data;
+  const createTask = useCreateTask(quickBoardId);
 
   const now = new Date();
   const name = displayName(profile?.full_name ?? "", profile?.email ?? session?.user.email ?? "").split(" ")[0];
@@ -56,13 +66,13 @@ const Home = () => {
   const handleQuickAdd = (e: FormEvent) => {
     e.preventDefault();
     const title = quickTitle.trim();
-    const firstSection = [...(boardData?.sections ?? [])].sort(byPosition)[0];
+    const firstSection = [...(quickBoard?.sections ?? [])].sort(byPosition)[0];
     if (!title) return;
     if (!firstSection) {
-      toast.error("Tu tablero no tiene secciones", { description: "Crea una sección en tu tablero para añadir tareas." });
+      toast.error("Ese tablero no tiene secciones", { description: "Crea una sección en el tablero para añadir tareas." });
       return;
     }
-    const siblings = todos.filter((t) => t.section_id === firstSection.id);
+    const siblings = (quickBoard?.tasks ?? []).filter((t) => t.section_id === firstSection.id && t.parent_id === null);
     createTask.mutate({ id: crypto.randomUUID(), title, section_id: firstSection.id, position: positionAtEnd(siblings) });
     setQuickTitle("");
   };
@@ -78,16 +88,30 @@ const Home = () => {
             {greeting(now.getHours())}, {name}
           </h2>
         </div>
-        <form onSubmit={handleQuickAdd} className="flex w-full gap-2 md:max-w-sm">
+        <form onSubmit={handleQuickAdd} className="flex w-full gap-2 md:max-w-md">
+          {myBoards.length > 1 && (
+            <Select value={quickBoardId} onValueChange={setQuickBoard}>
+              <SelectTrigger className="h-10 w-40 shrink-0 bg-card" aria-label="Tablero de la tarea rápida">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {myBoards.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Input
             placeholder="Añadir tarea rápida…"
             value={quickTitle}
             onChange={(e) => setQuickTitle(e.target.value)}
             maxLength={200}
             className="h-10 bg-card"
-            disabled={!myBoard}
+            disabled={!myBoards.length}
           />
-          <Button type="submit" size="icon" className="size-10 shrink-0" disabled={!quickTitle.trim() || !boardData}>
+          <Button type="submit" size="icon" className="size-10 shrink-0" disabled={!quickTitle.trim() || !quickBoard}>
             <Plus className="size-4" />
             <span className="sr-only">Añadir</span>
           </Button>
@@ -195,7 +219,7 @@ const Home = () => {
             <CardDescription>Lo más urgente de tu lista</CardDescription>
           </div>
           <Button asChild variant="ghost" size="sm">
-            <Link to={myBoard ? `/todos/${myBoard.id}` : "/todos"}>
+            <Link to={myBoards.length === 1 ? `/todos/${myBoards[0].id}` : "/todos"}>
               Ver todas <ArrowRight className="ml-1 size-4" />
             </Link>
           </Button>
@@ -210,22 +234,23 @@ const Home = () => {
           ) : next.length ? (
             <ul className="space-y-0.5">
               {next.map((task) => (
-                <CompactTaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={(completed) => updateTask.mutate({ id: task.id, completed })}
-                />
+                <HomeTaskItem key={task.id} task={task} />
               ))}
             </ul>
           ) : (
             <div className="py-10 text-center text-sm text-muted-foreground">
-              {!myBoard
-                ? isAdmin
-                  ? "Aún no tienes tablero. Añádete desde To-do List → Añadir usuario."
-                  : "Aún no tienes tablero. Pídele a un administrador que te añada al To-do List."
-                : todos.length
-                  ? "¡Todo al día! No tienes tareas pendientes."
-                  : "Aún no tienes tareas. Añade la primera arriba."}
+              {!myBoards.length ? (
+                <>
+                  Aún no tienes tableros.{" "}
+                  <Link to="/todos" className="font-medium text-primary underline underline-offset-2">
+                    Crea tu primer tablero
+                  </Link>
+                </>
+              ) : todos.length ? (
+                "¡Todo al día! No tienes tareas pendientes."
+              ) : (
+                "Aún no tienes tareas. Añade la primera arriba."
+              )}
             </div>
           )}
         </CardContent>
@@ -233,6 +258,12 @@ const Home = () => {
     </div>
   );
 };
+
+/** Cada tarea se actualiza en la caché de su propio tablero. */
+function HomeTaskItem({ task }: { task: Task }) {
+  const updateTask = useUpdateTask(task.board_id);
+  return <CompactTaskItem task={task} onToggle={(completed) => updateTask.mutate({ id: task.id, completed })} />;
+}
 
 function StatTile({
   label,

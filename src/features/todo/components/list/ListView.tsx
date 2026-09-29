@@ -5,13 +5,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, GripVertical } from "lucide-react";
 import type { Section, Task } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
-import { useCreateSection, useCreateTask, useUpdateSection, useUpdateTask } from "../../api/board";
+import { useCreateSection, useUpdateSection, useUpdateTask } from "../../api/board";
 import { screenReaderInstructions, useBoardSensors } from "../../lib/dnd";
 import { positionAtEnd } from "../../lib/ordering";
 import { subtaskProgress, subtasksByParent, type BoardData } from "../../lib/tree";
 import { useBoardDnd } from "../../lib/use-board-dnd";
 import { useLocalState } from "../../lib/use-local-state";
-import { InlineCreate } from "../board/InlineCreate";
+import { AddTaskButton, InlineCreate } from "../board/InlineCreate";
 import { SectionMenu, SectionNameInput } from "../board/SectionMenu";
 import { TaskRow } from "./TaskRow";
 
@@ -19,9 +19,11 @@ interface Props {
   data: BoardData;
   showCompleted: boolean;
   onOpenTask: (taskId: string) => void;
+  /** "Añadir tarea" abre el formulario completo en esa sección. */
+  onAddTask: (sectionId: string) => void;
 }
 
-export function ListView({ data, showCompleted, onOpenTask }: Props) {
+export function ListView({ data, showCompleted, onOpenTask, onAddTask }: Props) {
   const boardId = data.board.id;
   const dnd = useBoardDnd({ boardId, layout: "list", sections: data.sections, tasks: data.tasks, showCompleted });
   const layout = useMemo(() => ({ layout: "list" as const, ...dnd.layoutAccess }), [dnd.layoutAccess]);
@@ -80,6 +82,7 @@ export function ListView({ data, showCompleted, onOpenTask }: Props) {
                 onToggleExpanded={toggleExpanded}
                 showCompleted={showCompleted}
                 onOpenTask={open}
+                onAddTask={onAddTask}
               />
             );
           })}
@@ -121,6 +124,7 @@ interface GroupProps {
   onToggleExpanded: (taskId: string) => void;
   showCompleted: boolean;
   onOpenTask: (id: string) => void;
+  onAddTask: (sectionId: string) => void;
 }
 
 function SortableSectionGroup({
@@ -137,12 +141,12 @@ function SortableSectionGroup({
   onToggleExpanded,
   showCompleted,
   onOpenTask,
+  onAddTask,
 }: GroupProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: section.id,
     data: { type: "section" },
   });
-  const createTask = useCreateTask(section.board_id);
   const updateSection = useUpdateSection(section.board_id);
   const [renaming, setRenaming] = useState(false);
   const sectionTasks = useMemo(
@@ -219,14 +223,7 @@ function SortableSectionGroup({
             </div>
           </SortableContext>
           <div className={cn("px-2 py-1", taskIds.length > 0 && "border-t")}>
-            <InlineCreate
-              label="Añadir tarea"
-              placeholder="Nombre de la tarea"
-              className="hover:bg-muted"
-              onCreate={(title) =>
-                createTask.mutate({ id: crypto.randomUUID(), title, section_id: section.id, position: positionAtEnd(sectionTasks) })
-              }
-            />
+            <AddTaskButton className="hover:bg-muted" onClick={() => onAddTask(section.id)} />
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@
 | **Dueño de producto** | Daniel Acero |
 | **Estado** | ✅ Implementado (los 7 sprints), en producción en Supabase |
 | **Última actualización** | 2026-09-29 |
-| **Sprints** | 7 (≈1 semana cada uno, estimación orientativa) |
+| **Sprints** | 7 + 1 de ajustes ([sprint-08](sprint-08-ajustes-tableros-compartidos-y-nueva-tarea.md)) |
 
 ---
 
@@ -14,7 +14,7 @@
 
 Convertir la To-do List actual (una lista plana de tareas por usuario) en un gestor de tareas estilo Todoist:
 
-- **Tableros** por usuario, que un administrador crea al "añadir un usuario al To-do List".
+- **Tableros** personales (cualquier usuario) y de equipo (un admin los crea y asigna a varias personas). *Cambiado en el Sprint 8; antes: un tablero por usuario creado por un admin.*
 - Dos vistas del mismo tablero, intercambiables con un clic:
   - **Kanban:** columnas = secciones, tarjetas con drag and drop.
   - **Lista:** filas agrupadas por sección, también reordenables.
@@ -152,8 +152,9 @@ comment_attachments
 | Acción | Admin | Miembro del tablero | Otro usuario |
 |---|:-:|:-:|:-:|
 | Ver la lista de todos los tableros | ✅ | solo los suyos | solo los suyos |
-| Añadir un usuario al To-do List (crear su tablero) | ✅ | ❌ | ❌ |
-| Renombrar o archivar un tablero | ✅ | ❌ | ❌ |
+| Crear un tablero personal | ✅ | ✅ | ✅ |
+| Crear un tablero de equipo y asignar o quitar personas | ✅ | ❌ | ❌ |
+| Renombrar o archivar un tablero | ✅ | sólo su tablero personal | ❌ |
 | Crear, renombrar, reordenar y borrar secciones | ✅ | ✅ | ❌ |
 | Crear, editar, mover, completar y borrar tareas y subtareas | ✅ | ✅ | ❌ |
 | Comentar y adjuntar | ✅ | ✅ | ❌ |
@@ -241,8 +242,8 @@ Tienen una respuesta por defecto para no bloquear el trabajo; el dueño de produ
 
 | # | Pregunta | Por defecto |
 |---|---|---|
-| P1 | ¿Un usuario normal puede crearse tableros adicionales, o solo los crea un admin? | Solo el admin |
-| P2 | ¿Se puede compartir un tablero con más de una persona desde la UI? | El modelo lo permite, pero en v1 la UI solo gestiona al dueño |
+| P1 | ¿Un usuario normal puede crearse tableros adicionales, o solo los crea un admin? | ~~Solo el admin~~ → **Decidido (Sprint 8): todos crean tableros personales** |
+| P2 | ¿Se puede compartir un tablero con más de una persona desde la UI? | ~~Sólo el dueño~~ → **Decidido (Sprint 8): tableros de equipo con varias personas, asignadas por un admin** |
 | P3 | ¿Mover una tarjeta a la última sección ("Listo") la marca como completada? | No; completar es independiente |
 | P4 | ¿Qué secciones trae un tablero nuevo? | "Por hacer", "En progreso", "Listo" |
 | P5 | ¿El admin ve los tableros de todos o solo los que creó? | Los de todos |
@@ -251,6 +252,8 @@ Tienen una respuesta por defecto para no bloquear el trabajo; el dueño de produ
 ## 14. Resultado de la implementación (2026-09-29)
 
 **Preguntas abiertas:** se aplicaron las respuestas por defecto de la tabla anterior (P1–P6).
+
+*Actualizado tras el Sprint 8: RLS 54/54, e2e 63/63 (+1 de rendimiento).*
 
 **Cómo se verifica** (todo contra el proyecto real de Supabase, con identidades temporales que se crean y se borran en cada corrida):
 

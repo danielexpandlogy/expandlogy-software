@@ -70,3 +70,20 @@ export function InlineCreate({ label, placeholder, onCreate, chain = true, maxLe
     />
   );
 }
+
+/** "+ Añadir tarea": abre el formulario completo de nueva tarea. */
+export function AddTaskButton({ onClick, className }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground",
+        className,
+      )}
+    >
+      <Plus className="size-4" />
+      Añadir tarea
+    </button>
+  );
+}

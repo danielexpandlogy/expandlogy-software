@@ -5,12 +5,12 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { Section, Task } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
-import { useCreateSection, useCreateTask, useUpdateSection, useUpdateTask } from "../../api/board";
+import { useCreateSection, useUpdateSection, useUpdateTask } from "../../api/board";
 import { screenReaderInstructions, useBoardSensors } from "../../lib/dnd";
 import { positionAtEnd } from "../../lib/ordering";
 import { subtaskProgress, subtasksByParent, type BoardData } from "../../lib/tree";
 import { useBoardDnd } from "../../lib/use-board-dnd";
-import { InlineCreate } from "./InlineCreate";
+import { AddTaskButton, InlineCreate } from "./InlineCreate";
 import { SectionMenu, SectionNameInput } from "./SectionMenu";
 import { TaskCard } from "./TaskCard";
 
@@ -18,9 +18,11 @@ interface Props {
   data: BoardData;
   showCompleted: boolean;
   onOpenTask: (taskId: string) => void;
+  /** "Añadir tarea" abre el formulario completo en esa sección. */
+  onAddTask: (sectionId: string) => void;
 }
 
-export function KanbanView({ data, showCompleted, onOpenTask }: Props) {
+export function KanbanView({ data, showCompleted, onOpenTask, onAddTask }: Props) {
   const boardId = data.board.id;
   const dnd = useBoardDnd({ boardId, layout: "kanban", sections: data.sections, tasks: data.tasks, showCompleted });
   const layout = useMemo(() => ({ layout: "kanban" as const, ...dnd.layoutAccess }), [dnd.layoutAccess]);
@@ -71,6 +73,7 @@ export function KanbanView({ data, showCompleted, onOpenTask }: Props) {
                 allTasks={data.tasks}
                 activeId={dnd.activeId}
                 onOpenTask={open}
+                onAddTask={onAddTask}
               />
             );
           })}
@@ -119,14 +122,14 @@ interface SectionProps {
   allTasks: Task[];
   activeId: string | null;
   onOpenTask: (id: string) => void;
+  onAddTask: (sectionId: string) => void;
 }
 
-function SortableSection({ section, taskIds, taskById, progress, commentCounts, allTasks, activeId, onOpenTask }: SectionProps) {
+function SortableSection({ section, taskIds, taskById, progress, commentCounts, allTasks, activeId, onOpenTask, onAddTask }: SectionProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: section.id,
     data: { type: "section" },
   });
-  const createTask = useCreateTask(section.board_id);
   const updateSection = useUpdateSection(section.board_id);
   const [renaming, setRenaming] = useState(false);
 
@@ -194,13 +197,7 @@ function SortableSection({ section, taskIds, taskById, progress, commentCounts, 
       </SortableContext>
 
       <div className="px-2 pb-2">
-        <InlineCreate
-          label="Añadir tarea"
-          placeholder="Nombre de la tarea"
-          onCreate={(title) =>
-            createTask.mutate({ id: crypto.randomUUID(), title, section_id: section.id, position: positionAtEnd(sectionTasks) })
-          }
-        />
+        <AddTaskButton onClick={() => onAddTask(section.id)} />
       </div>
     </section>
   );

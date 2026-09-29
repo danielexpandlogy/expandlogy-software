@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, MoreHorizontal, Pencil } from "lucide-react";
+import { Archive, MoreHorizontal, Pencil, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import type { Board } from "@/lib/database.types";
 import { useUpdateBoard } from "../../api/boards";
+import { MembersDialog } from "../boards/MembersDialog";
 
 interface Props {
   board: Board;
@@ -31,7 +32,10 @@ interface Props {
 }
 
 export function BoardHeader({ board, subtitle, children }: Props) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, session } = useAuth();
+  // Un admin gestiona cualquier tablero; el dueño, su tablero personal.
+  const canManage = isAdmin || (board.kind === "personal" && board.owner_id === session?.user.id);
+  const [managingMembers, setManagingMembers] = useState(false);
   const updateBoard = useUpdateBoard();
   const navigate = useNavigate();
   const [renaming, setRenaming] = useState(false);
@@ -83,7 +87,7 @@ export function BoardHeader({ board, subtitle, children }: Props) {
             {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
           </div>
         )}
-        {isAdmin && !renaming && (
+        {canManage && !renaming && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground">
@@ -95,6 +99,11 @@ export function BoardHeader({ board, subtitle, children }: Props) {
               <DropdownMenuItem onSelect={startRename}>
                 <Pencil className="mr-2 size-4" /> Renombrar
               </DropdownMenuItem>
+              {isAdmin && board.kind === "team" && (
+                <DropdownMenuItem onSelect={() => setManagingMembers(true)}>
+                  <Users className="mr-2 size-4" /> Personas del tablero
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={() => setConfirmArchive(true)} className="text-destructive focus:text-destructive">
                 <Archive className="mr-2 size-4" /> Archivar tablero
               </DropdownMenuItem>
@@ -104,13 +113,16 @@ export function BoardHeader({ board, subtitle, children }: Props) {
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
 
+      {isAdmin && board.kind === "team" && (
+        <MembersDialog board={board} open={managingMembers} onOpenChange={setManagingMembers} />
+      )}
+
       <AlertDialog open={confirmArchive} onOpenChange={setConfirmArchive}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Archivar “{board.name}”?</AlertDialogTitle>
             <AlertDialogDescription>
-              El tablero deja de aparecer en el To-do List. No se borra ninguna tarea y la persona podrá recibir un
-              tablero nuevo.
+              El tablero deja de aparecer en el To-do List y en el menú de sus personas. No se borra ninguna tarea.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

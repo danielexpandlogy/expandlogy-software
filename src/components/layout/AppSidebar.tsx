@@ -28,7 +28,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { displayName, initials, ROLE_LABEL } from "@/lib/labels";
-import { useBoards } from "@/features/todo/api/boards";
+import { useMyBoards } from "@/features/todo/api/boards";
 
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
@@ -38,7 +38,8 @@ const NAV = [
 export function AppSidebar() {
   const { profile, session, isAdmin, signOut } = useAuth();
   const { isMobile, setOpenMobile } = useSidebar();
-  const { data: boards = [] } = useBoards();
+  // Los tableros en los que está la persona (personales y de equipo asignados).
+  const { data: boards } = useMyBoards();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -70,7 +71,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {NAV.map(({ to, label, icon: Icon, end }) => {
-                const active = end || (to === "/todos" && boards.length > 1) ? location.pathname === to : location.pathname.startsWith(to);
+                const active = end || (to === "/todos" && boards.length > 0) ? location.pathname === to : location.pathname.startsWith(to);
                 return (
                   <SidebarMenuItem key={to}>
                     <SidebarMenuButton asChild isActive={active} tooltip={label} className="h-9 font-medium">
@@ -79,14 +80,14 @@ export function AppSidebar() {
                         <span>{label}</span>
                       </NavLink>
                     </SidebarMenuButton>
-                    {/* Con varios tableros visibles (admins), acceso directo a cada uno. */}
-                    {to === "/todos" && boards.length > 1 && (
+                    {to === "/todos" && boards.length > 0 && (
                       <SidebarMenuSub>
                         {boards.map((b) => (
                           <SidebarMenuSubItem key={b.id}>
                             <SidebarMenuSubButton asChild isActive={location.pathname.startsWith(`/todos/${b.id}`)}>
                               <NavLink to={`/todos/${b.id}`} onClick={closeOnMobile}>
-                                <span>{displayName(b.owner_name, b.owner_email)}</span>
+                                {b.kind === "team" ? <Users /> : <UserRound />}
+                                <span>{b.name}</span>
                               </NavLink>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>

@@ -11,7 +11,12 @@ type SectionUpdate = Database["public"]["Tables"]["sections"]["Update"];
 
 /** Tablero completo (secciones + tareas + subtareas) en una sola carga. */
 export function useBoard(boardId: string | undefined) {
-  return useQuery({
+  return useQuery(boardQuery(boardId));
+}
+
+/** Opciones de la consulta de un tablero (también para useQueries en el Home). */
+export function boardQuery(boardId: string | undefined) {
+  return {
     queryKey: todoKeys.board(boardId ?? ""),
     enabled: !!boardId,
     queryFn: async (): Promise<BoardData> => {
@@ -27,8 +32,8 @@ export function useBoard(boardId: string | undefined) {
       const commentCounts = Object.fromEntries((counts.data ?? []).map((c) => [c.task_id, Number(c.count)]));
       return { board: board.data, sections: sections.data, tasks, commentCounts };
     },
-    retry: (count, error) => !(error instanceof BoardNotFoundError) && count < 2,
-  });
+    retry: (count: number, error: Error) => !(error instanceof BoardNotFoundError) && count < 2,
+  };
 }
 
 /** La API devuelve como máximo 1000 filas por petición: se pagina por id. */

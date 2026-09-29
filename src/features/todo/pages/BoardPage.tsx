@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { Archive, ArrowLeft, Search, WifiOff } from "lucide-react";
+import { Archive, ArrowLeft, Plus, Search, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { ViewToggle } from "../components/board/ViewToggle";
 import { ListView } from "../components/list/ListView";
 // El panel de detalle (comentarios, adjuntos, grabadora) se carga al abrir una tarea.
 const TaskDetailPanel = lazy(() => import("../components/task/TaskDetailPanel"));
+const NewTaskDialog = lazy(() => import("../components/task/NewTaskDialog").then((m) => ({ default: m.NewTaskDialog })));
 import { filterTasks, type BoardData } from "../lib/tree";
 import { useBoardView } from "../lib/use-board-view";
 import { useLocalState } from "../lib/use-local-state";
@@ -29,6 +30,8 @@ const BoardPage = () => {
   const [showCompleted, setShowCompleted] = useLocalState(`todo:showCompleted:${boardId}`, false);
   const [view, setView] = useBoardView(boardId);
   const [query, setQuery] = useState("");
+  // Sección en la que se abrió "Nueva tarea" (undefined = cerrado; "" = la primera).
+  const [newTaskIn, setNewTaskIn] = useState<string | undefined>(undefined);
   const realtime = useBoardRealtime(data ? boardId : undefined);
   // Las vistas reciben las tareas filtradas; el detalle, el tablero completo.
   const visibleData = useMemo(() => (data && query ? { ...data, tasks: filterTasks(data.tasks, query) } : data), [data, query]);
@@ -54,10 +57,16 @@ const BoardPage = () => {
 
   const summary = summaries?.find((b) => b.id === data.board.id);
   const owner = summary && summary.owner_id !== session?.user.id ? summary.owner_name || summary.owner_email : null;
+  const subtitle =
+    data.board.kind === "team"
+      ? `Tablero de equipo${summary ? ` · ${summary.member_count} ${summary.member_count === 1 ? "persona" : "personas"}` : ""}`
+      : owner
+        ? `Tablero personal de ${owner}`
+        : "Tablero personal";
 
   return (
     <div className="space-y-5">
-      <BoardHeader board={data.board} subtitle={owner ? `Tablero de ${owner}` : undefined}>
+      <BoardHeader board={data.board} subtitle={subtitle}>
         {realtime === "offline" && (
           <span role="status" className="flex items-center gap-1.5 rounded-md bg-warning/15 px-2 py-1 text-xs font-medium text-[hsl(28_90%_30%)]">
             <WifiOff className="size-3.5" /> Sin conexión, reintentando…
@@ -75,6 +84,9 @@ const BoardPage = () => {
           />
         </div>
         <ViewToggle view={view} onChange={setView} />
+        <Button onClick={() => setNewTaskIn("")} className="h-9">
+          <Plus className="mr-1.5 size-4" /> Nueva tarea
+        </Button>
         <div className="flex items-center gap-2 pl-1">
           <Switch id="show-completed" checked={showCompleted} onCheckedChange={setShowCompleted} />
           <Label htmlFor="show-completed" className="cursor-pointer text-sm font-normal text-muted-foreground">
@@ -86,9 +98,20 @@ const BoardPage = () => {
         <p className="text-sm text-muted-foreground">Ninguna tarea coincide con “{query}”.</p>
       )}
       {view === "kanban" ? (
-        <KanbanView data={visibleData!} showCompleted={showCompleted} onOpenTask={openTask} />
+        <KanbanView data={visibleData!} showCompleted={showCompleted} onOpenTask={openTask} onAddTask={setNewTaskIn} />
       ) : (
-        <ListView data={visibleData!} showCompleted={showCompleted} onOpenTask={openTask} />
+        <ListView data={visibleData!} showCompleted={showCompleted} onOpenTask={openTask} onAddTask={setNewTaskIn} />
+      )}
+      {newTaskIn !== undefined && (
+        <Suspense fallback={null}>
+          <NewTaskDialog
+            data={data}
+            open
+            onOpenChange={(o) => !o && setNewTaskIn(undefined)}
+            sectionId={newTaskIn || undefined}
+            onOpenTask={openTask}
+          />
+        </Suspense>
       )}
       <Routes>
         <Route path="t/:taskId" element={<TaskDetailRoute data={data} onNavigate={openTask} onClose={closeTask} />} />
