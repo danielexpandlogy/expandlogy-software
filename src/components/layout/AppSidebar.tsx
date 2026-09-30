@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ChevronsUpDown, LayoutDashboard, ListTodo, LogOut, UserRound, Users } from "lucide-react";
+import { ChevronsUpDown, FlaskConical, LayoutDashboard, ListTodo, LogOut, UserRound, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,8 +31,9 @@ import { displayName, initials, ROLE_LABEL } from "@/lib/labels";
 import { useMyBoards } from "@/features/todo/api/boards";
 
 const NAV = [
-  { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
-  { to: "/todos", label: "To-do List", icon: ListTodo, end: false },
+  { to: "/", label: "Inicio", icon: LayoutDashboard, end: true, adminOnly: false },
+  { to: "/todos", label: "To-do List", icon: ListTodo, end: false, adminOnly: false },
+  { to: "/landings", label: "Landings", icon: FlaskConical, end: false, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -70,7 +71,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-muted-foreground">Menú</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {NAV.map(({ to, label, icon: Icon, end }) => {
+              {NAV.filter((item) => isAdmin || !item.adminOnly).map(({ to, label, icon: Icon, end }) => {
                 const active = end || (to === "/todos" && boards.length > 0) ? location.pathname === to : location.pathname.startsWith(to);
                 return (
                   <SidebarMenuItem key={to}>

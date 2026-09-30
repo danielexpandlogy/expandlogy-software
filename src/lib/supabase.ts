@@ -24,4 +24,4 @@ export const supabasePublic = createClient<Database>(
   { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
 )
 
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type { Json } from './database.types'

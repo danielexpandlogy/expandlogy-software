@@ -6,6 +6,7 @@ import { AppSidebar } from "./AppSidebar";
 
 const TITLES: [prefix: string, title: string][] = [
   ["/todos", "To-do List"],
+  ["/landings", "Landings"],
   ["/perfil/usuarios", "Usuarios y roles"],
   ["/perfil", "Mi perfil"],
 ];

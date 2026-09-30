@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "verify:rls": "node scripts/verify-rls/index.mjs"
+    "verify:rls": "node scripts/verify-rls/index.mjs",
+    "build:landing-core": "rm -rf packages/landing-core/dist && esbuild packages/landing-core/src/index.ts --bundle --format=esm --platform=browser --target=es2020 --external:react --sourcemap --outfile=packages/landing-core/dist/index.js && tsc -p packages/landing-core/tsconfig.build.json"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

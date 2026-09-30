@@ -1,0 +1,129 @@
+/* Página de gracias de Eduardo, copiada del HTML original y acotada a .edu-ty. */
+
+.edu-ty {
+  --black-deep: #0c0b09;
+  --black: #15130f;
+  --orange: #d9711f;
+  --gold: #c9a15f;
+  --paper: #ffffff;
+  --ink: #201d17;
+  --border: #e8e2d6;
+
+  overflow-x: clip;
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--black);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.edu-ty :where(p) { margin: 1em 0; }
+.edu-ty img { max-width: 100%; display: block; }
+.edu-ty a { color: inherit; }
+.edu-ty .wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.edu-ty h1 {
+  font-family: "Inter", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+}
+.edu-ty .icon { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.edu-ty .highlight { color: var(--orange); }
+
+/* Header */
+.edu-ty header.site-header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+}
+.edu-ty header.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+}
+.edu-ty header.site-header img.logo { height: 170px; width: auto; }
+
+/* Thanks hero */
+.edu-ty .thanks-hero {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background:
+    radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.05), transparent 55%),
+    linear-gradient(165deg, var(--black) 0%, var(--black-deep) 100%);
+  padding: 90px 0;
+  color: #fff;
+  text-align: center;
+}
+.edu-ty .thanks-hero .wrap { max-width: 620px; }
+.edu-ty .thanks-hero h1 {
+  font-size: clamp(28px, 4.2vw, 40px);
+  color: #fff;
+  letter-spacing: -0.02em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.edu-ty .title-icon {
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 50%;
+  background: rgba(217, 113, 31, 0.15);
+  border: 2px solid var(--orange);
+  color: var(--orange);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6em;
+  flex: none;
+}
+.edu-ty .thanks-hero p.lead {
+  font-size: 17.5px;
+  color: #cfc9bc;
+  margin-top: 20px;
+}
+.edu-ty .thanks-divider {
+  width: 56px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+  margin: 38px auto;
+}
+.edu-ty .thanks-contact p {
+  font-size: 14.5px;
+  color: #a39d8e;
+  margin: 0;
+}
+.edu-ty .thanks-contact .phone-link {
+  display: inline-block;
+  font-size: clamp(26px, 4.4vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--gold);
+  margin-top: 12px;
+  text-decoration: none;
+}
+.edu-ty .thanks-contact .phone-link:hover { color: #fff; }
+.edu-ty .thanks-tagline {
+  color: #a39d8e;
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 44px;
+}
+
+@media (max-width: 640px) {
+  .edu-ty header.site-header img.logo { height: 110px; }
+  .edu-ty .thanks-hero { padding: 64px 0; }
+  .edu-ty .thanks-hero h1 { gap: 10px; }
+}

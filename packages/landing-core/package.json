@@ -1,0 +1,30 @@
+{
+  "name": "@danielexpandlogy/landing-core",
+  "version": "0.1.0",
+  "description": "Motor del Landing Lab para las landings de clientes: variantes, reparto de tráfico y registro de visitas.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielexpandlogy/expandlogy-software.git",
+    "directory": "packages/landing-core"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

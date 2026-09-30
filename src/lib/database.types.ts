@@ -1,6 +1,8 @@
 // Tipos escritos a mano a partir de supabase/migrations. Si el esquema crece,
 // conviene regenerarlos con `supabase gen types typescript --linked`.
 
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
 export type AppRole = "admin" | "user";
 export type TodoPriority = "low" | "medium" | "high";
 
@@ -119,6 +121,65 @@ export type NewAttachment = {
   duration_ms?: number | null;
 };
 
+// ── Landing Lab (A/B testing de landings públicas) ──────────────────────────
+
+export type LpSettings = {
+  landing: string;
+  name: string;
+  /** https://… (dominio del cliente) o /ruta (landing dentro de esta app). */
+  landing_url: string | null;
+  thanks_url: string | null;
+  accent_color: string;
+  auto_optimize: boolean;
+  min_visitors_per_option: number;
+  min_conversions_to_win: number;
+  win_probability: number;
+  traffic_floor: number;
+  updated_at: string;
+  created_at: string;
+};
+
+export type LpVariableKind = "headline" | "text" | "image" | "cta" | "color" | "order";
+
+/** Ajustes del tipo de variable. 'order': las secciones que se pueden reordenar. */
+export type LpVariableConfig = { sections?: { key: string; label: string }[] };
+
+export type LpVariable = {
+  id: string;
+  landing: string;
+  key: string;
+  name: string;
+  description: string;
+  kind: LpVariableKind;
+  config: LpVariableConfig;
+  enabled: boolean;
+  winner_option_id: string | null;
+  position: number;
+  created_at: string;
+};
+
+export type LpOption = {
+  id: string;
+  variable_id: string;
+  label: string;
+  value: Record<string, unknown>;
+  is_control: boolean;
+  active: boolean;
+  position: number;
+  created_at: string;
+};
+
+export type LpOptionStats = { option_id: string; variable_id: string; visitors: number; clicks: number; conversions: number };
+
+export type LpLandingTotals = {
+  landing: string;
+  visitors: number;
+  clicks: number;
+  conversions: number;
+  visitors_7d: number;
+  conversions_7d: number;
+};
+
 type TaskEditable = "title" | "description" | "priority" | "due_date" | "reminder_at" | "completed" | "position" | "section_id";
 
 export type Database = {
@@ -177,9 +238,49 @@ export type Database = {
           },
         ];
       };
+      lp_settings: {
+        Row: LpSettings;
+        Insert: Pick<LpSettings, "landing" | "name"> & Partial<Pick<LpSettings, "landing_url" | "thanks_url" | "accent_color">>;
+        Update: Partial<Omit<LpSettings, "landing" | "created_at">>;
+        Relationships: [];
+      };
+      lp_variables: {
+        Row: LpVariable;
+        Insert: Record<string, never>;
+        Update: Partial<Pick<LpVariable, "enabled" | "winner_option_id" | "name" | "description" | "config">>;
+        Relationships: [];
+      };
+      lp_options: {
+        Row: LpOption;
+        Insert: Pick<LpOption, "variable_id" | "label" | "value"> & Partial<Pick<LpOption, "active" | "position">>;
+        Update: Partial<Pick<LpOption, "label" | "value" | "active" | "position">>;
+        Relationships: [
+          {
+            foreignKeyName: "lp_options_variable_id_fkey";
+            columns: ["variable_id"];
+            isOneToOne: false;
+            referencedRelation: "lp_variables";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lp_visitors: {
+        Row: { id: string; landing: string; utm: Json; first_seen_at: string; last_seen_at: string; cta_clicked_at: string | null; converted_at: string | null };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      lp_assignments: {
+        Row: { visitor_id: string; variable_id: string; option_id: string; assigned_at: string };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: {
       board_summaries: { Row: BoardSummary; Relationships: [] };
+      lp_option_stats: { Row: LpOptionStats; Relationships: [] };
+      lp_landing_totals: { Row: LpLandingTotals; Relationships: [] };
     };
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
@@ -191,6 +292,25 @@ export type Database = {
       create_comment: {
         Args: { p_task_id: string; p_body: string; p_attachments?: NewAttachment[] };
         Returns: TaskComment;
+      };
+      lp_public_config: { Args: { p_landing: string }; Returns: Json };
+      lp_track_visit: {
+        Args: { p_landing: string; p_visitor_id: string; p_assignments: Json; p_utm?: Json };
+        Returns: undefined;
+      };
+      lp_track_event: { Args: { p_landing: string; p_visitor_id: string; p_event: "cta_click" | "conversion" }; Returns: boolean };
+      lp_create_variable: {
+        Args: {
+          p_landing: string;
+          p_key: string;
+          p_name: string;
+          p_kind: LpVariableKind;
+          p_description: string;
+          p_config: Json;
+          p_control_label: string;
+          p_control_value: Json;
+        };
+        Returns: string;
       };
     };
     Enums: {

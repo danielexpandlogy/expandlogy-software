@@ -1,0 +1,40 @@
+# Publica packages/landing-core en GitHub Packages cuando cambia su versión en
+# main. Para publicar: sube "version" en packages/landing-core/package.json.
+name: Publicar landing-core
+
+on:
+  push:
+    branches: [main]
+    paths: ["packages/landing-core/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@danielexpandlogy"
+      - run: npm ci
+      - run: npx vitest run packages
+      - run: npm run build:landing-core
+      - name: Publicar si la versión es nueva
+        working-directory: packages/landing-core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION ya está publicada. Sube la versión en packages/landing-core/package.json para publicar."
+          else
+            npm publish
+          fi
