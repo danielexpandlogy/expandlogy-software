@@ -25,7 +25,11 @@ export interface PublicConfig {
 }
 
 export interface Selection {
-  /** Valores a aplicar sobre la landing base, por key de variable. */
+  /**
+   * Valores a aplicar sobre la landing base, por key de variable. La opción
+   * original (control) no trae valor: se ve lo que tiene el código de la landing,
+   * aunque su copia en la base haya quedado desactualizada.
+   */
   values: Record<string, Record<string, unknown>>;
   /** Lo que se registra: {variable_id: option_id} (sin variables fijadas). */
   assignments: Record<string, string>;
@@ -73,7 +77,7 @@ export function chooseSelection(
     }
 
     if (!chosen) continue;
-    values[variable.key] = chosen.value;
+    if (!chosen.is_control) values[variable.key] = chosen.value;
     combo.push(`${variable.key}:${optionLetter(variable.options.indexOf(chosen))}`);
   }
 

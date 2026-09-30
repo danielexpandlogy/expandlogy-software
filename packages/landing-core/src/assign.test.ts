@@ -51,6 +51,13 @@ describe("chooseSelection", () => {
     expect(s.assignments).toEqual({});
   });
 
+  it("la opción original no aplica valor: se ve el contenido del código", () => {
+    const s = chooseSelection(config(), {}, [], () => 0.1);
+    expect(s.assignments).toEqual({ v1: "1a" });
+    expect(s.values).toEqual({});
+    expect(s.combo).toBe("headline:A");
+  });
+
   it("vista previa: fuerza la opción aunque esté apagada y no registra", () => {
     const s = chooseSelection(config({ enabled: false, options: [option("1a"), option("1b", { active: false })] }), {}, ["1b"]);
     expect(s.values).toEqual({ headline: { v: "1b" } });

@@ -253,3 +253,16 @@ export function useResetVariable(landing: string) {
     "Datos de la variable reiniciados",
   );
 }
+
+/** Borra todos los visitantes de la landing (y lo que vio cada uno): todo vuelve a cero. */
+export function useResetLanding(landing: string) {
+  return useLabMutation(
+    landing,
+    async () => {
+      const { error } = await supabase.from("lp_visitors").delete().eq("landing", landing);
+      if (error) throw error;
+    },
+    "No se borraron las estadísticas",
+    "Estadísticas borradas",
+  );
+}

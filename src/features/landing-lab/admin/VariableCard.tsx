@@ -213,7 +213,7 @@ export function VariableCard({ landing, landingUrl, variable, settings, accent }
                               </a>
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onSelect={() => setEditing({ id: o.id, label: o.label, value: structuredClone(o.value) })}>
+                          <DropdownMenuItem onSelect={() => setEditing({ id: o.id, label: o.label, value: structuredClone(o.value), isControl: o.is_control })}>
                             <Pencil className="mr-2 size-4" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => setActive.mutate({ id: o.id, active: !o.active })}>

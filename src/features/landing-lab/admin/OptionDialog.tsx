@@ -13,6 +13,8 @@ export interface OptionDraft {
   id?: string;
   label: string;
   value: Value;
+  /** La opción original: la landing muestra lo de su código, no este valor. */
+  isControl?: boolean;
 }
 
 interface Props {
@@ -231,7 +233,13 @@ export function OptionDialog({ open, onOpenChange, variableName, kind, sectionLa
             accent={accent}
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {initial.id && (
+          {initial.isControl && (
+            <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+              La opción original siempre muestra lo que tiene el código de la landing. Esto es la copia que se ve en el panel y la base
+              de las opciones nuevas: mantenla igual al código.
+            </p>
+          )}
+          {initial.id && !initial.isControl && (
             <p className="text-xs text-muted-foreground">
               Si cambias mucho el contenido, conviene reiniciar los datos de la variable: los resultados anteriores eran de la versión vieja.
             </p>

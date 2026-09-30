@@ -5,7 +5,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LpSettings } from "@/lib/database.types";
-import { useLabData, useUpdateSettings } from "../api";
+import { useLabData, useResetLanding, useUpdateSettings } from "../api";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { VariableCard } from "./VariableCard";
 import { RulesCard, SampleSizeCard } from "./RulesCard";
 import { num, rate } from "./format";
@@ -42,6 +53,59 @@ function CopyUrl({ url }: { url: string }) {
       <span className="truncate">{url}</span>
       {copied ? <Check className="size-3.5 shrink-0 text-success" /> : <Copy className="size-3.5 shrink-0" />}
     </button>
+  );
+}
+
+/** Borra visitantes, clics y agendas de la landing. Pide escribir el identificador para confirmar. */
+function ResetStatsCard({ landing }: { landing: string }) {
+  const reset = useResetLanding(landing);
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+
+  return (
+    <Card className="border-destructive/30 shadow-none">
+      <CardContent className="flex flex-col gap-3 p-5 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <p className="font-medium">Borrar estadísticas</p>
+          <p className="text-muted-foreground">
+            Visitantes, clics y agendas de todas las variables vuelven a cero. Las variables y sus opciones se quedan.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => {
+            setTyped("");
+            setOpen(true);
+          }}
+        >
+          Borrar estadísticas
+        </Button>
+      </CardContent>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Borrar las estadísticas de «{landing}»?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borran todos sus visitantes y lo que vio cada uno. No se puede deshacer. Escribe{" "}
+              <span className="font-mono font-semibold text-foreground">{landing}</span> para confirmar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input value={typed} onChange={(e) => setTyped(e.target.value)} className="font-mono" aria-label="Identificador de la landing" />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={typed !== landing || reset.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => reset.mutate()}
+            >
+              Borrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
   );
 }
 
@@ -92,6 +156,7 @@ function LandingTab({ settings }: { settings: LpSettings }) {
           </ol>
         </CardContent>
       </Card>
+      <ResetStatsCard landing={settings.landing} />
     </>
   );
 }
